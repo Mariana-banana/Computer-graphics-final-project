@@ -196,6 +196,15 @@ float g_CameraDistance = 3.5f; // Distância da câmera para a origem
 float g_ForearmAngleZ = 0.0f;
 float g_ForearmAngleX = 0.0f;
 
+glm::vec3 camera_pos = glm::vec3(0.0f, 0.0f, 5.0f);
+glm::vec3 camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+bool start_click = true; // identifies if this was the first click of the mouse
+
+float last_time = 0.0f;
+float time_diff = 0.0f;
+
 // Variáveis que controlam translação do torso
 float g_TorsoPositionX = 0.0f;
 float g_TorsoPositionY = 0.0f;
@@ -249,6 +258,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "ERROR: glfwCreateWindow() failed.\n");
         std::exit(EXIT_FAILURE);
     }
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Definimos a função de callback que será chamada sempre que o usuário
     // pressionar alguma tecla do teclado ...
@@ -346,16 +356,42 @@ int main(int argc, char *argv[])
         float z = r * cos(g_CameraPhi) * cos(g_CameraTheta);
         float x = r * cos(g_CameraPhi) * sin(g_CameraTheta);
 
+        float current_time = (float)glfwGetTime();
+        time_diff = current_time - last_time;
+        last_time = current_time;
+
+        float camera_speed = 1.0f;
+
+        // for each pressed key, we need to add this so we dont walk in freezed frames
+        glm::vec3 horizontal_front = glm::normalize(glm::vec3(camera_front.x, 0.0f, camera_front.z));
+
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            camera_pos += camera_speed * time_diff * horizontal_front;
+
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            camera_pos -= camera_speed * time_diff * horizontal_front;
+
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            camera_pos -= glm::normalize(glm::cross(horizontal_front, camera_up)) * camera_speed * time_diff;
+
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            camera_pos += glm::normalize(glm::cross(horizontal_front, camera_up)) * camera_speed * time_diff;
+
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::vec4 camera_position_c = glm::vec4(x, y, z, 1.0f);             // Ponto "c", centro da câmera
-        glm::vec4 camera_lookat_l = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);      // Ponto "l", para onde a câmera (look-at) estará sempre olhando
-        glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
-        glm::vec4 camera_up_vector = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);     // Vetor "up" fixado para apontar para o "céu" (eito Y global)
+        glm::vec4 camera_position_c = glm::vec4(camera_pos, 1.0f);              // Ponto "c", centro da câmera
+        glm::vec4 camera_lookat_l = glm::vec4(camera_pos + camera_front, 1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+        glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c;     // Vetor "view", sentido para onde a câmera está virada
+        glm::vec4 camera_up_vector = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);         // Vetor "up" fixado para apontar para o "céu" (eito Y global)
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
+        // glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
+
+        glm::mat4 view = glm::lookAt( // this function creates a look at camera
+            glm::vec3(camera_position_c),
+            glm::vec3(camera_lookat_l),
+            camera_up);
 
         // Agora computamos a matriz de Projeção.
         glm::mat4 projection;
@@ -931,6 +967,7 @@ void MouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
         // com o botão esquerdo pressionado.
         glfwGetCursorPos(window, &g_LastCursorPosX, &g_LastCursorPosY);
         g_LeftMouseButtonPressed = true;
+        start_click = true;
     }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
     {
@@ -982,65 +1019,53 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
     // parâmetros que definem a posição da câmera dentro da cena virtual.
     // Assim, temos que o usuário consegue controlar a câmera.
 
-    if (g_LeftMouseButtonPressed)
+    if (!g_LeftMouseButtonPressed)
+        return;
+
+    // Needs to be static so it doesnt "teleports" a little.
+    // WARN: static variables were chosen after asking chat-GPT for help
+    static float horizontal = -90.0f; // - Z, since we use right hand
+    static float vertical = 0.0f;
+    static float x_pos = 400.0f; // 800 x 800  / 2
+    static float y_pos = 400.0f;
+
+    if (start_click)
     {
-        // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
-        float dx = xpos - g_LastCursorPosX;
-        float dy = ypos - g_LastCursorPosY;
-
-        // Atualizamos parâmetros da câmera com os deslocamentos
-        g_CameraTheta -= 0.01f * dx;
-        g_CameraPhi += 0.01f * dy;
-
-        // Em coordenadas esféricas, o ângulo phi deve ficar entre -pi/2 e +pi/2.
-        float phimax = 3.141592f / 2;
-        float phimin = -phimax;
-
-        if (g_CameraPhi > phimax)
-            g_CameraPhi = phimax;
-
-        if (g_CameraPhi < phimin)
-            g_CameraPhi = phimin;
-
-        // Atualizamos as variáveis globais para armazenar a posição atual do
-        // cursor como sendo a última posição conhecida do cursor.
-        g_LastCursorPosX = xpos;
-        g_LastCursorPosY = ypos;
+        x_pos = (float)xpos;
+        y_pos = (float)ypos;
+        start_click = false;
+        return; // updates cursor position
     }
 
-    if (g_RightMouseButtonPressed)
-    {
-        // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
-        float dx = xpos - g_LastCursorPosX;
-        float dy = ypos - g_LastCursorPosY;
+    // Mouse movement
+    float xoffset = (float)xpos - x_pos;
+    float yoffset = y_pos - (float)ypos;
 
-        // Atualizamos parâmetros da antebraço com os deslocamentos
-        g_ForearmAngleZ -= 0.01f * dx;
-        g_ForearmAngleX += 0.01f * dy;
+    // Update last position
+    x_pos = (float)xpos;
+    y_pos = (float)ypos;
 
-        // Atualizamos as variáveis globais para armazenar a posição atual do
-        // cursor como sendo a última posição conhecida do cursor.
-        g_LastCursorPosX = xpos;
-        g_LastCursorPosY = ypos;
-    }
+    // Apply sensibility
+    float sensitivity = 0.13f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
 
-    if (g_MiddleMouseButtonPressed)
-    {
-        // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
-        float dx = xpos - g_LastCursorPosX;
-        float dy = ypos - g_LastCursorPosY;
+    // Update angles
+    horizontal += xoffset;
+    vertical += yoffset;
 
-        // Atualizamos parâmetros da antebraço com os deslocamentos
-        g_TorsoPositionX += 0.01f * dx;
-        g_TorsoPositionY -= 0.01f * dy;
+    if (vertical > 89.0f) // Prevents camera from doing a sharp turn
+        vertical = 89.0f;
+    if (vertical < -89.0f)
+        vertical = -89.0f;
 
-        // Atualizamos as variáveis globais para armazenar a posição atual do
-        // cursor como sendo a última posição conhecida do cursor.
-        g_LastCursorPosX = xpos;
-        g_LastCursorPosY = ypos;
-    }
+    // Creates direction vector based on cursor movement
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(horizontal)) * cos(glm::radians(vertical));
+    direction.y = sin(glm::radians(vertical));
+    direction.z = sin(glm::radians(horizontal)) * cos(glm::radians(vertical));
+    camera_front = glm::normalize(direction);
 }
-
 // Função callback chamada sempre que o usuário movimenta a "rodinha" do mouse.
 void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset)
 {
