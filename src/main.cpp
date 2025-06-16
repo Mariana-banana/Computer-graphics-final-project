@@ -196,7 +196,7 @@ float g_CameraDistance = 3.5f; // Distância da câmera para a origem
 float g_ForearmAngleZ = 0.0f;
 float g_ForearmAngleX = 0.0f;
 
-glm::vec3 camera_pos = glm::vec3(0.0f, 0.0f, 5.0f);
+glm::vec3 camera_pos = glm::vec3(0.0f, -0.5f, 5.0f);
 glm::vec3 camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -204,6 +204,10 @@ bool start_click = true; // identifies if this was the first click of the mouse
 
 float last_time = 0.0f;
 float time_diff = 0.0f;
+
+// player speed
+float normal_speed = 1.0f;
+float run_speed = 2.5f;
 
 // Variáveis que controlam translação do torso
 float g_TorsoPositionX = 0.0f;
@@ -250,8 +254,12 @@ int main(int argc, char *argv[])
 
     // Criamos uma janela do sistema operacional, com 800 colunas e 600 linhas
     // de pixels, e com título "INF01047 ...".
+    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+
+    // Create full screen window
     GLFWwindow *window;
-    window = glfwCreateWindow(800, 600, "INF01047 - 00579108 - Mariana Burzlaff Ercolani", NULL, NULL);
+    window = glfwCreateWindow(mode->width, mode->height, "Aline e Mari", monitor, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -326,6 +334,8 @@ int main(int argc, char *argv[])
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // hides and grabs the cursor, providing virtual and unlimited cursor movement.
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -360,7 +370,11 @@ int main(int argc, char *argv[])
         time_diff = current_time - last_time;
         last_time = current_time;
 
-        float camera_speed = 1.0f;
+        float camera_speed = normal_speed;
+        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        {
+            camera_speed = run_speed;
+        }
 
         // for each pressed key, we need to add this so we dont walk in freezed frames
         glm::vec3 horizontal_front = glm::normalize(glm::vec3(camera_front.x, 0.0f, camera_front.z));
@@ -1018,9 +1032,6 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
     // instante de tempo, e usamos esta movimentação para atualizar os
     // parâmetros que definem a posição da câmera dentro da cena virtual.
     // Assim, temos que o usuário consegue controlar a câmera.
-
-    if (!g_LeftMouseButtonPressed)
-        return;
 
     // Needs to be static so it doesnt "teleports" a little.
     // WARN: static variables were chosen after asking chat-GPT for help
