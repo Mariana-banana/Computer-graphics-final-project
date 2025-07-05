@@ -390,7 +390,7 @@ int main(int argc, char* argv[])
         #define ROOM 0
 
         glActiveTexture(GL_TEXTURE0);
-        model = Matrix_Translate(0.0f, -0.5f,0.0f);
+        model = Matrix_Translate(0.0f, -0.8f,0.0f); 
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         DrawVirtualObjectMtl(&roommodel, room_textures, ROOM);
 
