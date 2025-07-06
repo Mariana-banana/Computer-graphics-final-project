@@ -337,6 +337,30 @@ int main(int argc, char *argv[])
     BuildTrianglesAndAddToVirtualScene(&roommodel);
     std::map<std::string, GLuint> room_textures = LoadTexturesFromObjModel(&roommodel, "../../data/room/");
 
+    ObjModel floormodel("../../data/floor/plane.obj");
+    ComputeNormals(&floormodel);
+    BuildTrianglesAndAddToVirtualScene(&floormodel);
+
+    ObjModel bedmodel("../../data/bed/RFSBI1TUMBM1R2T06LF7JZ3LC.obj");
+    ComputeNormals(&bedmodel);
+    BuildTrianglesAndAddToVirtualScene(&bedmodel);
+    std::map<std::string, GLuint> bed_textures = LoadTexturesFromObjModel(&bedmodel, "../../data/bed/");
+
+    ObjModel stovemodel("../../data/stove/75VMC3RPY8QVUEA16B08ZZLW1.obj");
+    ComputeNormals(&stovemodel);
+    BuildTrianglesAndAddToVirtualScene(&stovemodel);
+    std::map<std::string, GLuint> stove_textures = LoadTexturesFromObjModel(&stovemodel, "../../data/stove/");
+    
+    ObjModel sofamodel("../../data/sofa/ACNAORMOA9N1GSJY0ZMQKTLCE.obj");
+    ComputeNormals(&sofamodel);
+    BuildTrianglesAndAddToVirtualScene(&sofamodel);
+    std::map<std::string, GLuint> sofa_textures = LoadTexturesFromObjModel(&sofamodel, "../../data/sofa/");
+    
+    ObjModel doormodel("../../data/door/IBWGNOPUJHOS4JCGGWUZYBYR5.obj");
+    ComputeNormals(&doormodel);
+    BuildTrianglesAndAddToVirtualScene(&doormodel);
+    std::map<std::string, GLuint> door_textures = LoadTexturesFromObjModel(&doormodel, "../../data/door/");
+
     if (argc > 1)
     {
         ObjModel model(argv[1]);
@@ -378,9 +402,36 @@ int main(int argc, char *argv[])
         // e também resetamos todos os pixels do Z-buffer (depth buffer).
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        float room_scale = 7.0f;
+        // Matriz ROOM
+        float room_scale1 = 20.0f;
+        float room_scale2 = 15.0f;
         glm::vec3 room_position = glm::vec3(0.0f, 0.0f, 0.0f);
-        glm::mat4 room_model_matrix = Matrix_Translate(room_position.x, room_position.y, room_position.z) * Matrix_Scale(room_scale, room_scale, room_scale);
+        glm::mat4 room_model_matrix = Matrix_Translate(room_position.x, room_position.y, room_position.z) * Matrix_Scale(room_scale1, room_scale2, room_scale1);
+
+        // Matriz FLOOR
+        float floor_scale = 30.0f;
+        glm::vec3 floor_position = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::mat4 floor_model_matrix = Matrix_Translate(0.0f, -9.0f, 0.0f) * Matrix_Scale(floor_scale, floor_scale, floor_scale); 
+
+        // Matriz BED
+        float bed_scale = 5.0f;
+        glm::vec3 bed_position = glm::vec3(-13.0f, -6.0f, 15.0f);
+        glm::mat4 bed_model_matrix = Matrix_Translate(bed_position.x, bed_position.y, bed_position.z) * Matrix_Scale(bed_scale, bed_scale, bed_scale);
+
+        // Matriz STOVE
+        float stove_scale = 2.0f;
+        glm::vec3 stove_position = glm::vec3(18.0f, -6.5f, -17.0f);
+        glm::mat4 stove_model_matrix = Matrix_Translate(stove_position.x, stove_position.y, stove_position.z) * Matrix_Scale(stove_scale, stove_scale, stove_scale);
+
+        // Matriz SOFA
+        float sofa_scale = 5.0f;
+        glm::vec3 sofa_position = glm::vec3(12.0f, -6.5f, 5.0f);
+        glm::mat4 sofa_model_matrix = Matrix_Translate(sofa_position.x, sofa_position.y, sofa_position.z) * Matrix_Scale(sofa_scale, sofa_scale, sofa_scale) * Matrix_Rotate_Y(1.55f);
+
+        // Matriz DOOR
+        float door_scale = 5.5f;
+        glm::vec3 door_position = glm::vec3(-21.0f, -4.0f, -15.0f);
+        glm::mat4 door_model_matrix = Matrix_Translate(door_position.x, door_position.y, door_position.z) * Matrix_Scale(door_scale, door_scale, door_scale) * Matrix_Rotate_Y(3.15f);
 
         float xmin = -7.0f;
         float xmax = +7.0f;
@@ -453,9 +504,37 @@ int main(int argc, char *argv[])
         glUniformMatrix4fv(g_projection_uniform, 1, GL_FALSE, glm::value_ptr(projection));
 
 #define ROOM 0
+#define BED 1
+#define FLOOR 2
+#define STOVE 3
+#define SOFA 4
+#define DOOR 5
+
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(room_model_matrix));
         DrawVirtualObjectMtl(&roommodel, room_textures, ROOM);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(floor_model_matrix));
+        glUniform1f(g_object_id_uniform, FLOOR);
+        DrawVirtualObject("the_plane");
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(bed_model_matrix));
+        DrawVirtualObjectMtl(&bedmodel, bed_textures, BED);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(stove_model_matrix));
+        DrawVirtualObjectMtl(&stovemodel, stove_textures, STOVE);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(sofa_model_matrix));
+        DrawVirtualObjectMtl(&sofamodel, sofa_textures, SOFA);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(door_model_matrix));
+        DrawVirtualObjectMtl(&doormodel, door_textures, DOOR);
+        
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
         TextRendering_ShowEulerAngles(window);
