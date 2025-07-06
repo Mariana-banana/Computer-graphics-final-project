@@ -27,4 +27,10 @@ bool RayIntersectsPlane(const glm::vec3 &ray_origin,
                         const Plane &plane,
                         float &t_out);
 
+bool RayIntersectsSphere(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
+                         const Sphere &sphere, float &t_out);
+
+bool RayIntersectsAABB(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
+                       const AABB &box, float &t_out);
+
 string CheckRaycastFromCenter(const Player &player, const std::vector<CollidableObject> &objects);

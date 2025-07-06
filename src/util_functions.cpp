@@ -177,39 +177,106 @@ bool RayIntersectsPlane(const glm::vec3 &ray_origin,
 {
     float denom = glm::dot(plane.normal, ray_dir);
 
-    // Se o denominador for próximo de 0, o raio é paralelo ao plano
+    // Raio paralelo ao plano
     if (fabs(denom) < 1e-6f)
         return false;
 
-    // Ponto qualquer no plano é dado por: P tal que dot(n, P) + d = 0
-    // Para encontrar t tal que: dot(n, O + t*D) + d = 0
+    // fórmula de um ponto no plano: P tal que dot(n, P) + d = 0
+    // precisamos encontrar um t que: dot(n, O + t*D) + d = 0
     t_out = -(glm::dot(plane.normal, ray_origin) + plane.distance) / denom;
 
-    // Se t < 0, interseção está "atrás" da origem do raio
+    // Se t < 0 significa que a interseção está "atrás" da origem do raio
     return t_out >= 0;
 }
 
+bool RayIntersectsSphere(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
+                         const Sphere &sphere, float &t_out)
+{
+    glm::vec3 oc = ray_origin - sphere.center;
+    float a = glm::dot(ray_dir, ray_dir);
+    float b = 2.0f * glm::dot(oc, ray_dir);
+    float c = glm::dot(oc, oc) - sphere.radius * sphere.radius;
+
+    float discriminant = b * b - 4 * a * c;
+
+    if (discriminant < 0)
+    {
+        return false; // Não houve intersecção
+    }
+
+    //  A intersecção mais próxima, com t > 0
+    float t = (-b - sqrt(discriminant)) / (2.0f * a);
+
+    if (t < 0) // Se ela está atrás do raio, tenta a segunda
+    {
+        t = (-b + sqrt(discriminant)) / (2.0f * a);
+    }
+
+    // Se ainda estiver atrás, não há intersecção
+    if (t < 0)
+    {
+        return false;
+    }
+
+    t_out = t;
+    return true;
+}
+
+bool RayIntersectsAABB(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
+                       const AABB &box, float &t_out)
+{
+    // Inversa para transformar div em mult
+    glm::vec3 invDir = 1.0f / ray_dir;
+
+    // Calcula os tempos de intersecção com os planos da caixa em cada eixo
+    glm::vec3 t1 = (box.min - ray_origin) * invDir;
+    glm::vec3 t2 = (box.max - ray_origin) * invDir;
+
+    // Garante que t1 sempre tenha os tempos de entrada nos "slabs"
+    glm::vec3 tmin_vec = glm::min(t1, t2);
+    glm::vec3 tmax_vec = glm::max(t1, t2);
+
+    // Encontra o último tempo de entrada (t_near) e o primeiro tempo de saída (t_far)
+    float t_near = max(max(tmin_vec.x, tmin_vec.y), tmin_vec.z);
+    float t_far = min(min(tmax_vec.x, tmax_vec.y), tmax_vec.z);
+
+    // Condições de falha
+    if (t_near > t_far || t_far < 0)
+    {
+        return false;
+    }
+
+    t_out = t_near;
+    return true;
+};
+
 string CheckRaycastFromCenter(const Player &player, const std::vector<CollidableObject> &objects)
 {
-    glm::vec3 ray_origin = player.position;
-    glm::vec3 ray_dir = glm::normalize(player.front_vector);
-
     float closest_distance = std::numeric_limits<float>::max();
     const CollidableObject *hit_object = nullptr;
 
     for (const auto &obj : objects)
     {
-        float t;
+        float t = 0.0f;
+        bool hit = false;
+
         if (obj.shape_type == ShapeType::SHAPE_PLANE)
         {
-            if (RayIntersectsPlane(ray_origin, ray_dir, obj.plane, t))
-            {
-                if (t >= 0.0f && t < closest_distance)
-                {
-                    closest_distance = t;
-                    hit_object = &obj;
-                }
-            }
+            hit = RayIntersectsPlane(player.position, player.front_vector, obj.plane, t);
+        }
+        else if (obj.shape_type == ShapeType::SHAPE_AABB)
+        {
+            hit = RayIntersectsAABB(player.position, player.front_vector, obj.aabb, t);
+        }
+        else if (obj.shape_type == ShapeType::SHAPE_SPHERE)
+        {
+            hit = RayIntersectsSphere(player.position, player.front_vector, obj.sphere, t);
+        }
+
+        if (hit && t < closest_distance)
+        {
+            closest_distance = t;
+            hit_object = &obj;
         }
     }
 
@@ -218,8 +285,5 @@ string CheckRaycastFromCenter(const Player &player, const std::vector<Collidable
         cout << hit_object->text << endl;
         return hit_object->text;
     }
-    else
-    {
-        return "";
-    }
+    return "";
 }

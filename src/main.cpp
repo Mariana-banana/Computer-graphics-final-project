@@ -231,8 +231,8 @@ float last_time = 0.0f;
 float time_diff = 0.0f;
 
 // velocidade do jogador
-float normal_speed = 6.5f;
-float run_speed = 9.5f;
+float normal_speed = 10.5f;
+float run_speed = 15.5f;
 
 // Pontos de controle para a curva de Bézier
 glm::vec3 bezier_p0 = glm::vec3(1.5f, 0.0f, 0.0f);
@@ -249,6 +249,8 @@ int bezier_direction = 1;
 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
+GLuint g_CrosshairShaderID = 0;
+GLuint g_CrosshairVao = 0;
 
 // MAIN
 
@@ -350,12 +352,12 @@ int main(int argc, char *argv[])
     ComputeNormals(&stovemodel);
     BuildTrianglesAndAddToVirtualScene(&stovemodel);
     std::map<std::string, GLuint> stove_textures = LoadTexturesFromObjModel(&stovemodel, "../../data/stove/");
-    
+
     ObjModel sofamodel("../../data/sofa/ACNAORMOA9N1GSJY0ZMQKTLCE.obj");
     ComputeNormals(&sofamodel);
     BuildTrianglesAndAddToVirtualScene(&sofamodel);
     std::map<std::string, GLuint> sofa_textures = LoadTexturesFromObjModel(&sofamodel, "../../data/sofa/");
-    
+
     ObjModel doormodel("../../data/door/IBWGNOPUJHOS4JCGGWUZYBYR5.obj");
     ComputeNormals(&doormodel);
     BuildTrianglesAndAddToVirtualScene(&doormodel);
@@ -386,6 +388,39 @@ int main(int argc, char *argv[])
         glm::vec3(0.3f, 0.8f, 0.3f)     // max
     };
 
+    // FONTE: Chat gpt + gemini
+    GLuint crosshair_vertex_shader_id = LoadShader_Vertex("../../src/crosshair_vertex.glsl");
+    GLuint crosshair_fragment_shader_id = LoadShader_Fragment("../../src/crosshair_fragment.glsl");
+    g_CrosshairShaderID = CreateGpuProgram(crosshair_vertex_shader_id, crosshair_fragment_shader_id);
+
+    // 2. Define a geometria do crosshair (um pequeno quadrado)
+    float crosshair_size = 0.005f; // Tamanho do ponto (0.01 = 1% da altura da tela). Aumente para um ponto maior.
+    float crosshair_vertices[] = {
+        // Primeiro triângulo do quadrado
+        -crosshair_size, -crosshair_size, // Canto inferior esquerdo
+        crosshair_size, -crosshair_size,  // Canto inferior direito
+        crosshair_size, crosshair_size,   // Canto superior direito
+
+        // Segundo triângulo do quadrado
+        -crosshair_size, -crosshair_size, // Canto inferior esquerdo
+        crosshair_size, crosshair_size,   // Canto superior direito
+        -crosshair_size, crosshair_size   // Canto superior esquerdo
+    };
+
+    // 3. Cria o objeto (VAO) e envia os vértices para a GPU
+    GLuint crosshair_vbo;
+    glGenVertexArrays(1, &g_CrosshairVao);
+    glGenBuffers(1, &crosshair_vbo);
+
+    glBindVertexArray(g_CrosshairVao);
+    glBindBuffer(GL_ARRAY_BUFFER, crosshair_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(crosshair_vertices), crosshair_vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
+
+    glBindVertexArray(0); // Desvincula para segurança
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -408,64 +443,112 @@ int main(int argc, char *argv[])
         glm::vec3 room_position = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::mat4 room_model_matrix = Matrix_Translate(room_position.x, room_position.y, room_position.z) * Matrix_Scale(room_scale1, room_scale2, room_scale1);
 
-        // Matriz FLOOR
-        float floor_scale = 30.0f;
-        glm::vec3 floor_position = glm::vec3(0.0f, 0.0f, 0.0f);
-        glm::mat4 floor_model_matrix = Matrix_Translate(0.0f, -9.0f, 0.0f) * Matrix_Scale(floor_scale, floor_scale, floor_scale); 
-
-        // Matriz BED
-        float bed_scale = 5.0f;
-        glm::vec3 bed_position = glm::vec3(-13.0f, -6.0f, 15.0f);
-        glm::mat4 bed_model_matrix = Matrix_Translate(bed_position.x, bed_position.y, bed_position.z) * Matrix_Scale(bed_scale, bed_scale, bed_scale);
-
-        // Matriz STOVE
-        float stove_scale = 2.0f;
-        glm::vec3 stove_position = glm::vec3(18.0f, -6.5f, -17.0f);
-        glm::mat4 stove_model_matrix = Matrix_Translate(stove_position.x, stove_position.y, stove_position.z) * Matrix_Scale(stove_scale, stove_scale, stove_scale);
-
-        // Matriz SOFA
-        float sofa_scale = 5.0f;
-        glm::vec3 sofa_position = glm::vec3(12.0f, -6.5f, 5.0f);
-        glm::mat4 sofa_model_matrix = Matrix_Translate(sofa_position.x, sofa_position.y, sofa_position.z) * Matrix_Scale(sofa_scale, sofa_scale, sofa_scale) * Matrix_Rotate_Y(1.55f);
-
-        // Matriz DOOR
-        float door_scale = 5.5f;
-        glm::vec3 door_position = glm::vec3(-21.0f, -4.0f, -15.0f);
-        glm::mat4 door_model_matrix = Matrix_Translate(door_position.x, door_position.y, door_position.z) * Matrix_Scale(door_scale, door_scale, door_scale) * Matrix_Rotate_Y(3.15f);
-
-        float xmin = -7.0f;
-        float xmax = +7.0f;
-        float zmin = -7.0f;
-        float zmax = +7.0f;
-
-        glUseProgram(g_GpuProgramID);
+        float xmin = -20.0f;
+        float xmax = +20.0f;
+        float zmin = -20.0f;
+        float zmax = +20.0f;
 
         CollidableObject parede_fundo;
         parede_fundo.shape_type = ShapeType::SHAPE_PLANE;
         parede_fundo.plane = {glm::vec3(0.0f, 0.0f, +1.0f), -zmin};
         parede_fundo.text = "É só a parede dos fundos da casa.";
+        parede_fundo.is_interactive = false;
 
         CollidableObject parede_frente;
         parede_frente.shape_type = ShapeType::SHAPE_PLANE;
         parede_frente.plane = {glm::vec3(0.0f, 0.0f, -1.0f), zmax};
         parede_frente.text = "É só a parede da frente da casa.";
+        parede_frente.is_interactive = false;
 
         CollidableObject parede_esquerda;
         parede_esquerda.shape_type = ShapeType::SHAPE_PLANE;
         parede_esquerda.plane = {glm::vec3(+1.0f, 0.0f, 0.0f), -xmin};
         parede_esquerda.text = "É só a parede esquerda da casa.";
+        parede_esquerda.is_interactive = false;
 
         CollidableObject parede_direita;
         parede_direita.shape_type = ShapeType::SHAPE_PLANE;
         parede_direita.plane = {glm::vec3(-1.0f, 0.0f, 0.0f), xmax};
         parede_direita.text = "É só a parede direita da casa.";
+        parede_direita.is_interactive = false;
 
         scene_collidables.push_back(parede_fundo);
         scene_collidables.push_back(parede_frente);
         scene_collidables.push_back(parede_esquerda);
         scene_collidables.push_back(parede_direita);
 
+        // Matriz FLOOR
+        float floor_scale = 30.0f;
+        glm::vec3 floor_position = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::mat4 floor_model_matrix = Matrix_Translate(0.0f, -9.0f, 0.0f) * Matrix_Scale(floor_scale, floor_scale, floor_scale);
+
+        float floor_y = -9.0f + floor_scale;
+
+        CollidableObject floor;
+        floor.shape_type = ShapeType::SHAPE_PLANE;
+        floor.plane = {glm::vec3(0.0f, 1.0f, 0.0f), -floor_y};
+        floor.text = "É só um chão.";
+        floor.is_interactive = false;
+        scene_collidables.push_back(floor);
+
+        // Matriz BED
+        float bed_scale = 5.0f;
+        glm::vec3 bed_position = glm::vec3(-13.0f, -6.0f, 15.0f);
+        glm::mat4 bed_model_matrix = Matrix_Translate(bed_position.x, bed_position.y, bed_position.z) * Matrix_Scale(bed_scale, bed_scale, bed_scale);
+
+        CollidableObject bed;
+        bed.shape_type = ShapeType::SHAPE_AABB;
+        bed.aabb.min = glm::vec3(-20.10f, -5.0f, 8.750f);
+        bed.aabb.max = glm::vec3(-6.49f, 5.0f, 19.62f);
+        bed.text = "É uma cama bem confortável.";
+        bed.is_interactive = true;
+        scene_collidables.push_back(bed);
+
+        // Matriz STOVE
+        float stove_scale = 2.0f;
+        glm::vec3 stove_position = glm::vec3(18.0f, -6.5f, -17.0f);
+        glm::mat4 stove_model_matrix = Matrix_Translate(stove_position.x, stove_position.y, stove_position.z) * Matrix_Scale(stove_scale, stove_scale, stove_scale);
+
+        CollidableObject stove;
+        stove.shape_type = ShapeType::SHAPE_AABB;
+        stove.aabb.min = glm::vec3(15.11f, -5.0f, -19.35f);
+        stove.aabb.max = glm::vec3(19.5f, 5.0f, -13.61f);
+        stove.text = "É um fogão.";
+        stove.is_interactive = true;
+        scene_collidables.push_back(stove);
+
+        // // Matriz SOFA
+        float sofa_scale = 5.0f;
+        glm::vec3 sofa_position = glm::vec3(12.0f, -6.5f, 5.0f);
+        glm::mat4 sofa_model_matrix = Matrix_Translate(sofa_position.x, sofa_position.y, sofa_position.z) * Matrix_Scale(sofa_scale, sofa_scale, sofa_scale) * Matrix_Rotate_Y(1.55f);
+
+        CollidableObject sofa;
+        sofa.shape_type = ShapeType::SHAPE_AABB;
+        sofa.aabb.min = glm::vec3(5.4f, -5.0f, 1.63f);
+        sofa.aabb.max = glm::vec3(17.94f, 5.0f, 7.78f);
+        sofa.text = "É um sofá empoeirado.";
+        sofa.is_interactive = true;
+        scene_collidables.push_back(sofa);
+
+        // // Matriz DOOR
+        float door_scale = 5.5f;
+        glm::vec3 door_position = glm::vec3(-21.0f, -4.0f, -15.0f);
+        glm::mat4 door_model_matrix = Matrix_Translate(door_position.x, door_position.y, door_position.z) * Matrix_Scale(door_scale, door_scale, door_scale) * Matrix_Rotate_Y(3.15f);
+
+        CollidableObject door;
+        door.shape_type = ShapeType::SHAPE_AABB;
+        door.aabb.min = glm::vec3(-19.0f, -5.0f, -18.0f);
+        door.aabb.max = glm::vec3(-19.0f, 5.0f, -12.0f);
+        door.text = "É uma porta destrancada.";
+        door.is_interactive = true;
+        scene_collidables.push_back(door);
+
+        glUseProgram(g_GpuProgramID);
+
         UpdatePlayerPosition(window, time_diff, player, scene_collidables);
+        printf("Player Position: X=%.2f, Y=%.2f, Z=%.2f\r",
+               player.position.x, player.position.y, player.position.z);
+        fflush(stdout); // Força a impressão imediata no terminal
 
         // Câmera livre
         glm::vec4 camera_position_c = glm::vec4(player.position, 1.0f);
@@ -534,7 +617,7 @@ int main(int argc, char *argv[])
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(door_model_matrix));
         DrawVirtualObjectMtl(&doormodel, door_textures, DOOR);
-        
+
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
         TextRendering_ShowEulerAngles(window);
@@ -545,6 +628,18 @@ int main(int argc, char *argv[])
         // Imprimimos na tela informação sobre o número de quadros renderizados
         // por segundo (frames per second).
         TextRendering_ShowFramesPerSecond(window);
+
+        glDisable(GL_DEPTH_TEST); // Para o crosshair ficar sempre por cima
+
+        glUseProgram(g_CrosshairShaderID); // Ativa o shader do crosshair
+        glBindVertexArray(g_CrosshairVao); // Ativa o objeto do crosshair
+
+        // Desenha as 4 vértices como 2 linhas separadas
+        // (Assumindo que você ainda tem 4 vértices no seu VAO)
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        glBindVertexArray(0); // Desliga o VAO por segurança
+        glEnable(GL_DEPTH_TEST);
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
