@@ -6,6 +6,9 @@
 
 #include "collisions.h"
 
+#include <bits/stdc++.h>
+using namespace std;
+
 // Curva de Bézier
 glm::vec3 CalculateBezierPoint(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3);
 glm::vec3 CalculateBezierTangent(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3);
@@ -18,3 +21,10 @@ void UpdateSphere(glm::mat4 &out_sphere_model, Sphere &out_sphere_collider);
 
 void UpdatePlayerPosition(GLFWwindow *window, float time_diff, Player &player,
                           const std::vector<CollidableObject> &collidables);
+
+bool RayIntersectsPlane(const glm::vec3 &ray_origin,
+                        const glm::vec3 &ray_dir,
+                        const Plane &plane,
+                        float &t_out);
+
+string CheckRaycastFromCenter(const Player &player, const std::vector<CollidableObject> &objects);

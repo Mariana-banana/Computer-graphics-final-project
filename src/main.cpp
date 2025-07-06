@@ -240,6 +240,8 @@ glm::vec3 bezier_p1 = glm::vec3(0.75f, 0.0f, 1.5f);
 glm::vec3 bezier_p2 = glm::vec3(-0.75f, 0.0f, 1.5f);
 glm::vec3 bezier_p3 = glm::vec3(-1.5f, 0.0f, 0.0f);
 
+std::vector<CollidableObject> scene_collidables;
+
 // Controles do comportamento durante a curva
 float bezier_t = 0.0f;
 float bezier_speed = 0.15f;
@@ -380,56 +382,37 @@ int main(int argc, char *argv[])
         glm::vec3 room_position = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::mat4 room_model_matrix = Matrix_Translate(room_position.x, room_position.y, room_position.z) * Matrix_Scale(room_scale, room_scale, room_scale);
 
-        AABB room_collider;
-        glm::vec3 local_room_min = g_VirtualScene["V7NCMVM2CESW8Q4IP1OHYDUES"].bbox_min;
-        glm::vec3 local_room_max = g_VirtualScene["V7NCMVM2CESW8Q4IP1OHYDUES"].bbox_max;
+        float xmin = -7.0f;
+        float xmax = +7.0f;
+        float zmin = -7.0f;
+        float zmax = +7.0f;
 
-        // printf("BBox Local da Sala: min[%.2f, %.2f, %.2f] max[%.2f, %.2f, %.2f]\n",
-        //        local_room_min.x, local_room_min.y, local_room_min.z,
-        //        local_room_max.x, local_room_max.y, local_room_max.z);
-        // fflush(stdout);
-
-        glm::vec3 corners[8] = {
-            glm::vec3(local_room_min.x, local_room_min.y, local_room_min.z),
-            glm::vec3(local_room_max.x, local_room_min.y, local_room_min.z),
-            glm::vec3(local_room_min.x, local_room_max.y, local_room_min.z),
-            glm::vec3(local_room_min.x, local_room_min.y, local_room_max.z),
-            glm::vec3(local_room_max.x, local_room_max.y, local_room_min.z),
-            glm::vec3(local_room_min.x, local_room_max.y, local_room_max.z),
-            glm::vec3(local_room_max.x, local_room_min.y, local_room_max.z),
-            glm::vec3(local_room_max.x, local_room_max.y, local_room_max.z)};
-
-        glm::vec3 transformed_corner = room_model_matrix * glm::vec4(corners[0], 1.0f);
-        room_collider.min = transformed_corner;
-        room_collider.max = transformed_corner;
-        for (int i = 1; i < 8; ++i)
-        {
-            transformed_corner = room_model_matrix * glm::vec4(corners[i], 1.0f);
-            room_collider.min = glm::min(room_collider.min, transformed_corner);
-            room_collider.max = glm::max(room_collider.max, transformed_corner);
-        }
         glUseProgram(g_GpuProgramID);
-        room_planes.push_back({glm::vec3(0.0f, 1.0f, 0.0f), room_collider.min.y});
-        room_planes.push_back({glm::vec3(0.0f, -1.0f, 0.0f), -room_collider.max.y});
 
-        // Paredes laterais
-        room_planes.push_back({glm::vec3(1.0f, 0.0f, 0.0f), room_collider.min.x});
-        room_planes.push_back({glm::vec3(-1.0f, 0.0f, 0.0f), -room_collider.max.x});
+        CollidableObject parede_fundo;
+        parede_fundo.shape_type = ShapeType::SHAPE_PLANE;
+        parede_fundo.plane = {glm::vec3(0.0f, 0.0f, +1.0f), -zmin};
+        parede_fundo.text = "É só a parede dos fundos da casa.";
 
-        // Paredes fronteira e traseira
-        room_planes.push_back({glm::vec3(0.0f, 0.0f, 1.0f), room_collider.min.z});
-        room_planes.push_back({glm::vec3(0.0f, 0.0f, -1.0f), -room_collider.max.z});
+        CollidableObject parede_frente;
+        parede_frente.shape_type = ShapeType::SHAPE_PLANE;
+        parede_frente.plane = {glm::vec3(0.0f, 0.0f, -1.0f), zmax};
+        parede_frente.text = "É só a parede da frente da casa.";
 
-        std::vector<CollidableObject> scene_collidables;
+        CollidableObject parede_esquerda;
+        parede_esquerda.shape_type = ShapeType::SHAPE_PLANE;
+        parede_esquerda.plane = {glm::vec3(+1.0f, 0.0f, 0.0f), -xmin};
+        parede_esquerda.text = "É só a parede esquerda da casa.";
 
-        // adiciona os planos as colisoes
-        for (const auto &p : room_planes)
-        {
-            CollidableObject plane_obj;
-            plane_obj.shape_type = ShapeType::SHAPE_PLANE;
-            plane_obj.plane = p;
-            scene_collidables.push_back(plane_obj);
-        }
+        CollidableObject parede_direita;
+        parede_direita.shape_type = ShapeType::SHAPE_PLANE;
+        parede_direita.plane = {glm::vec3(-1.0f, 0.0f, 0.0f), xmax};
+        parede_direita.text = "É só a parede direita da casa.";
+
+        scene_collidables.push_back(parede_fundo);
+        scene_collidables.push_back(parede_frente);
+        scene_collidables.push_back(parede_esquerda);
+        scene_collidables.push_back(parede_direita);
 
         UpdatePlayerPosition(window, time_diff, player, scene_collidables);
 
@@ -1274,6 +1257,15 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
     if (key == GLFW_KEY_Z && action == GLFW_PRESS)
     {
         g_AngleZ += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
+    }
+
+    if (key == GLFW_KEY_E && action == GLFW_PRESS)
+    {
+        string screen_text_obj = CheckRaycastFromCenter(player, scene_collidables);
+        if (screen_text_obj != "")
+        {
+            TextRendering_PrintString(window, screen_text_obj, -0.6f, 0.0f, 1.0f);
+        }
     }
 
     // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.

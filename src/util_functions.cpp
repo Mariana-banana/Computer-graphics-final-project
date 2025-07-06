@@ -5,6 +5,8 @@
 #include <cmath>
 #include <cstdio>
 #include <vector>
+#include <bits/stdc++.h>
+using namespace std;
 
 glm::vec3 CalculateBezierPoint(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3)
 {
@@ -138,11 +140,6 @@ void UpdatePlayerPosition(GLFWwindow *window, float time_diff, Player &player,
 
                 if (object.shape_type == ShapeType::SHAPE_AABB)
                 {
-                    printf("Player AABB: min[%f, %f, %f] max[%f, %f, %f] --- Plane: normal[%f, %f, %f] dist[%f]\n",
-                           player_collider.min.x, player_collider.min.y, player_collider.min.z,
-                           player_collider.max.x, player_collider.max.y, player_collider.max.z,
-                           object.plane.normal.x, object.plane.normal.y, object.plane.normal.z,
-                           object.plane.distance);
                     if (TestAABBvsAABB(player_collider, object.aabb))
                     {
                         has_collided = true;
@@ -157,10 +154,72 @@ void UpdatePlayerPosition(GLFWwindow *window, float time_diff, Player &player,
                         break;
                     }
                 }
+                else if (object.shape_type == ShapeType::SHAPE_PLANE)
+                {
+                    if (TestAABBvsPlane(player_collider, object.plane))
+                    {
+                        has_collided = true;
+                        break;
+                    }
+                }
             }
 
             if (!has_collided)
                 player.position = potential_pos;
         }
+    }
+}
+
+bool RayIntersectsPlane(const glm::vec3 &ray_origin,
+                        const glm::vec3 &ray_dir,
+                        const Plane &plane,
+                        float &t_out)
+{
+    float denom = glm::dot(plane.normal, ray_dir);
+
+    // Se o denominador for próximo de 0, o raio é paralelo ao plano
+    if (fabs(denom) < 1e-6f)
+        return false;
+
+    // Ponto qualquer no plano é dado por: P tal que dot(n, P) + d = 0
+    // Para encontrar t tal que: dot(n, O + t*D) + d = 0
+    t_out = -(glm::dot(plane.normal, ray_origin) + plane.distance) / denom;
+
+    // Se t < 0, interseção está "atrás" da origem do raio
+    return t_out >= 0;
+}
+
+string CheckRaycastFromCenter(const Player &player, const std::vector<CollidableObject> &objects)
+{
+    glm::vec3 ray_origin = player.position;
+    glm::vec3 ray_dir = glm::normalize(player.front_vector);
+
+    float closest_distance = std::numeric_limits<float>::max();
+    const CollidableObject *hit_object = nullptr;
+
+    for (const auto &obj : objects)
+    {
+        float t;
+        if (obj.shape_type == ShapeType::SHAPE_PLANE)
+        {
+            if (RayIntersectsPlane(ray_origin, ray_dir, obj.plane, t))
+            {
+                if (t >= 0.0f && t < closest_distance)
+                {
+                    closest_distance = t;
+                    hit_object = &obj;
+                }
+            }
+        }
+    }
+
+    if (hit_object)
+    {
+        cout << hit_object->text << endl;
+        return hit_object->text;
+    }
+    else
+    {
+        return "";
     }
 }

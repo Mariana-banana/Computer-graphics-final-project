@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/vec3.hpp>
+#include <string>
 
 enum class ShapeType
 {
@@ -41,6 +42,7 @@ struct CollidableObject
     AABB aabb;
     Sphere sphere;
     Plane plane;
+    std::string text;
 };
 
 bool CheckPointSphereCollision(glm::vec3 point, const Sphere &sphere);
