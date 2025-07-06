@@ -1,0 +1,30 @@
+newmtl M_Bed_01
+Ka 0.000000 0.000000 0.000000
+Kd 0.698039 0.698039 0.698039
+Ks 0.000000 0.000000 0.000000
+d 1.000000
+illum 2
+Ns 9.84916
+map_Kd T_Bed_01_A_Diff.png
+map_Ka T_Bed_01_A_Norm.png
+
+newmtl M_Bed_01_Fabric_Blue_01
+Ka 0.000000 0.000000 0.000000
+Kd 0.698039 0.698039 0.698039
+Ks 0.000000 0.000000 0.000000
+d 1.000000
+illum 2
+Ns 9.84916
+map_Kd T_Bed_01_Fabric_Blue_01_Diff.png
+map_Ka T_Bed_01_Fabric_Blue_01_Norm.png
+
+newmtl M_Bed_01_Fabric_Blue_02
+Ka 0.000000 0.000000 0.000000
+Kd 0.698039 0.698039 0.698039
+Ks 0.000000 0.000000 0.000000
+d 1.000000
+illum 2
+Ns 9.84916
+map_Kd T_Bed_01_Fabric_Blue_02_Diff.png
+map_Ka T_Bed_01_Fabric_Blue_02_Norm.png
+
