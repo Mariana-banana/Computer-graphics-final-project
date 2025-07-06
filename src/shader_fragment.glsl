@@ -15,7 +15,11 @@ uniform mat4 projection;
 #define STOVE 3
 #define SOFA 4
 #define DOOR 5
-#define CABINET1 5
+#define CABINET1 6
+#define TV 7
+#define RADIATOR 8
+#define RAT 9
+#define TABLE 10
 uniform int object_id;
 
 uniform sampler2D TextureImage0;
@@ -70,6 +74,34 @@ void main()
         final_color = texture(TextureImage0, vec2(U, V)).rgb;
     }
     else if (object_id == CABINET1) 
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+
+        final_color = texture(TextureImage0, vec2(U, V)).rgb;
+    }
+    else if (object_id == TV) 
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+
+        final_color = texture(TextureImage0, vec2(U, V)).rgb;
+    }
+    else if (object_id == RADIATOR) 
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+
+        final_color = texture(TextureImage0, vec2(U, V)).rgb;
+    }
+    else if (object_id == RAT) 
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+
+        final_color = texture(TextureImage0, vec2(U, V)).rgb;
+    }
+    else if (object_id == TABLE) 
     {
         U = texcoords.x;
         V = texcoords.y;

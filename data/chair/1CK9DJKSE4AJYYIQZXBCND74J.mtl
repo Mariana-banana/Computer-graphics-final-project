@@ -1,0 +1,10 @@
+newmtl M_Chair_01
+Ka 0.000000 0.000000 0.000000
+Kd 0.698039 0.698039 0.698039
+Ks 0.000000 0.000000 0.000000
+d 1.000000
+illum 2
+Ns 9.84916
+map_Kd T_Chair_01_Diff.png
+map_Ka T_Chair_01_Norm.png
+

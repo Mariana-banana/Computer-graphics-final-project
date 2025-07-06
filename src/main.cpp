@@ -363,6 +363,31 @@ int main(int argc, char *argv[])
     BuildTrianglesAndAddToVirtualScene(&doormodel);
     std::map<std::string, GLuint> door_textures = LoadTexturesFromObjModel(&doormodel, "../../data/door/");
 
+    ObjModel cabinet1model("../../data/cabinet1/LKB0Z15Y2JSWNIKSJZ9B8WCNY.obj");
+    ComputeNormals(&cabinet1model);
+    BuildTrianglesAndAddToVirtualScene(&cabinet1model);
+    std::map<std::string, GLuint> cabinet1_textures = LoadTexturesFromObjModel(&cabinet1model, "../../data/cabinet1/");
+
+    ObjModel tvmodel("../../data/tv/R471NYP16HGJGU9S7TBFXBO3E.obj");
+    ComputeNormals(&tvmodel);
+    BuildTrianglesAndAddToVirtualScene(&tvmodel);
+    std::map<std::string, GLuint> tv_textures = LoadTexturesFromObjModel(&tvmodel, "../../data/tv/");
+
+    ObjModel radiatormodel("../../data/radiator/LBIEJVJ5WQ38A21GOY8QEG7K4.obj");
+    ComputeNormals(&radiatormodel);
+    BuildTrianglesAndAddToVirtualScene(&radiatormodel);
+    std::map<std::string, GLuint> radiator_textures = LoadTexturesFromObjModel(&radiatormodel, "../../data/radiator/");
+
+    ObjModel ratmodel("../../data/rat/8LTPBJCTY0WWDFOHE0U5BMLHQ.obj");
+    ComputeNormals(&ratmodel);
+    BuildTrianglesAndAddToVirtualScene(&ratmodel);
+    std::map<std::string, GLuint> rat_textures = LoadTexturesFromObjModel(&ratmodel, "../../data/rat/");
+
+    ObjModel tablemodel("../../data/table/YZVB78847CT0OE8WDRU4I9Q9B.obj");
+    ComputeNormals(&tablemodel);
+    BuildTrianglesAndAddToVirtualScene(&tablemodel);
+    std::map<std::string, GLuint> table_textures = LoadTexturesFromObjModel(&tablemodel, "../../data/table/");
+
     if (argc > 1)
     {
         ObjModel model(argv[1]);
@@ -443,10 +468,10 @@ int main(int argc, char *argv[])
         glm::vec3 room_position = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::mat4 room_model_matrix = Matrix_Translate(room_position.x, room_position.y, room_position.z) * Matrix_Scale(room_scale1, room_scale2, room_scale1);
 
-        float xmin = -20.0f;
-        float xmax = +20.0f;
-        float zmin = -20.0f;
-        float zmax = +20.0f;
+        float zmin = -20;
+        float zmax = 20;
+        float xmin = 20;
+        float xmax = -20;
 
         CollidableObject parede_fundo;
         parede_fundo.shape_type = ShapeType::SHAPE_PLANE;
@@ -498,8 +523,8 @@ int main(int argc, char *argv[])
 
         CollidableObject bed;
         bed.shape_type = ShapeType::SHAPE_AABB;
-        bed.aabb.min = glm::vec3(-20.10f, -5.0f, 8.750f);
-        bed.aabb.max = glm::vec3(-6.49f, 5.0f, 19.62f);
+        bed.aabb.min = glm::vec3(-20.10f, -8.0f, 8.750f);
+        bed.aabb.max = glm::vec3(-6.49f, 3.0f, 19.62f);
         bed.text = "É uma cama bem confortável.";
         bed.is_interactive = true;
         scene_collidables.push_back(bed);
@@ -517,7 +542,7 @@ int main(int argc, char *argv[])
         stove.is_interactive = true;
         scene_collidables.push_back(stove);
 
-        // // Matriz SOFA
+        // Matriz SOFA
         float sofa_scale = 5.0f;
         glm::vec3 sofa_position = glm::vec3(12.0f, -6.5f, 5.0f);
         glm::mat4 sofa_model_matrix = Matrix_Translate(sofa_position.x, sofa_position.y, sofa_position.z) * Matrix_Scale(sofa_scale, sofa_scale, sofa_scale) * Matrix_Rotate_Y(1.55f);
@@ -530,7 +555,7 @@ int main(int argc, char *argv[])
         sofa.is_interactive = true;
         scene_collidables.push_back(sofa);
 
-        // // Matriz DOOR
+        // Matriz DOOR
         float door_scale = 5.5f;
         glm::vec3 door_position = glm::vec3(-21.0f, -4.0f, -15.0f);
         glm::mat4 door_model_matrix = Matrix_Translate(door_position.x, door_position.y, door_position.z) * Matrix_Scale(door_scale, door_scale, door_scale) * Matrix_Rotate_Y(3.15f);
@@ -543,9 +568,59 @@ int main(int argc, char *argv[])
         door.is_interactive = true;
         scene_collidables.push_back(door);
 
+        // Matriz CABINET1
+        float cabinet1_scale = 2.5f;
+        glm::vec3 cabinet1_position = glm::vec3(12.0f, -6.5f, 18.0f);
+        glm::mat4 cabinet1_model_matrix = Matrix_Translate(cabinet1_position.x, cabinet1_position.y, cabinet1_position.z) * Matrix_Scale(cabinet1_scale, cabinet1_scale, cabinet1_scale) * Matrix_Rotate_Y(-1.60f);
+
+        // Matriz TV
+        float tv_scale = 1.2f;
+        glm::vec3 tv_position = glm::vec3(12.0f, -2.8f, 18.5f);
+        glm::mat4 tv_model_matrix = Matrix_Translate(tv_position.x, tv_position.y, tv_position.z) * Matrix_Scale(tv_scale, tv_scale, tv_scale) * Matrix_Rotate_Y(-1.60f);
+
+        CollidableObject tv;
+        tv.shape_type = ShapeType::SHAPE_AABB;
+        tv.aabb.min = glm::vec3(9.5f, -5.0f, 15.4f);
+        tv.aabb.max = glm::vec3(14.5f, 5.0f, 19.6f);
+        tv.text = "É uma TV desligada.";
+        tv.is_interactive = false;
+        scene_collidables.push_back(tv);
+
+        // Matriz RADIATOR
+        float radiator_scale = 2.0f;
+        glm::vec3 radiator_position = glm::vec3(-20.0f, -7.0f, 5.0f);
+        glm::mat4 radiator_model_matrix = Matrix_Translate(radiator_position.x, radiator_position.y, radiator_position.z) * Matrix_Scale(radiator_scale, radiator_scale, radiator_scale) * Matrix_Rotate_Y(-1.60f);
+
+        CollidableObject radiator;
+        radiator.shape_type = ShapeType::SHAPE_AABB;
+        radiator.aabb.min = glm::vec3(-19.7f, -5.0f, 1.5f);
+        radiator.aabb.max = glm::vec3(-18.0f, 5.0f, 7.0f);
+        radiator.text = "É um radiador ligado.";
+        radiator.is_interactive = true;
+        scene_collidables.push_back(radiator);
+
+        // Matriz RAT
+        float rat_scale = 1.2f;
+        glm::vec3 rat_position = glm::vec3(4.0f, -4.5f, -3.0f);
+        glm::mat4 rat_model_matrix = Matrix_Translate(rat_position.x, rat_position.y, rat_position.z) * Matrix_Scale(rat_scale, rat_scale, rat_scale) * Matrix_Rotate_Y(-1.4f);
+
+        // Matriz TABLE
+        float table_scale = 3.5f;
+        glm::vec3 table_position = glm::vec3(4.0f, -7.5f, -4.0f);
+        glm::mat4 table_model_matrix = Matrix_Translate(table_position.x, table_position.y, table_position.z) * Matrix_Scale(table_scale, table_scale, table_scale) * Matrix_Rotate_Y(-0.0f);
+
+        CollidableObject table;
+        table.shape_type = ShapeType::SHAPE_AABB;
+        table.aabb.min = glm::vec3(0.6f, -5.0f, -9.0f);
+        table.aabb.max = glm::vec3(6.8f, 5.0f, 0.3f);
+        table.text = "É uma mesa com um rato em cima.";
+        table.is_interactive = true;
+        scene_collidables.push_back(table);
+
         glUseProgram(g_GpuProgramID);
 
         UpdatePlayerPosition(window, time_diff, player, scene_collidables);
+
         printf("Player Position: X=%.2f, Y=%.2f, Z=%.2f\r",
                player.position.x, player.position.y, player.position.z);
         fflush(stdout); // Força a impressão imediata no terminal
@@ -592,6 +667,11 @@ int main(int argc, char *argv[])
 #define STOVE 3
 #define SOFA 4
 #define DOOR 5
+#define CABINET1 6
+#define TV 7
+#define RADIATOR 8
+#define RAT 9
+#define TABLE 10
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(room_model_matrix));
@@ -617,6 +697,26 @@ int main(int argc, char *argv[])
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(door_model_matrix));
         DrawVirtualObjectMtl(&doormodel, door_textures, DOOR);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(cabinet1_model_matrix));
+        DrawVirtualObjectMtl(&cabinet1model, cabinet1_textures, CABINET1);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(tv_model_matrix));
+        DrawVirtualObjectMtl(&tvmodel, tv_textures, CABINET1);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(radiator_model_matrix));
+        DrawVirtualObjectMtl(&radiatormodel, radiator_textures, RADIATOR);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(rat_model_matrix));
+        DrawVirtualObjectMtl(&ratmodel, rat_textures, RAT);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(table_model_matrix));
+        DrawVirtualObjectMtl(&tablemodel, table_textures, TABLE);
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
