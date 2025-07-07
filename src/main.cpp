@@ -14,8 +14,8 @@
 #include <algorithm>
 
 // Bibliotecas OpenGL
-#include <glad/glad.h>  // Criação de contexto OpenGL 3.3
-#include <GLFW/glfw3.h> // Criação de janelas do sistema operacional
+#include <glad/glad.h>  
+#include <GLFW/glfw3.h> 
 
 // Biblioteca GLM
 #include <glm/mat4x4.hpp>
@@ -46,9 +46,7 @@ struct ObjModel
     {
         printf("Carregando objetos do arquivo \"%s\"...\n", filename);
 
-        // Se basepath == NULL, então setamos basepath como o dirname do
-        // filename, para que os arquivos MTL sejam corretamente carregados caso
-        // estejam no mesmo diretório dos arquivos OBJ.
+        // Espera que .mtl esteja no mesmo diretório do .obj
         std::string fullpath(filename);
         std::string dirname;
         if (basepath == NULL)
@@ -93,18 +91,14 @@ struct ObjModel
 // Dados de renderização de cada objeto na cena
 struct SceneObject
 {
-    std::string name;              // Nome do objeto
-    size_t first_index;            // Índice do primeiro vértice dentro do vetor indices[] definido em BuildTrianglesAndAddToVirtualScene()
-    size_t num_indices;            // Número de índices do objeto dentro do vetor indices[] definido em BuildTrianglesAndAddToVirtualScene()
-    GLenum rendering_mode;         // Modo de rasterização (GL_TRIANGLES, GL_TRIANGLE_STRIP, etc.)
-    GLuint vertex_array_object_id; // ID do VAO onde estão armazenados os atributos do modelo
-    glm::vec3 bbox_min;            // Axis-Aligned Bounding Box do objeto
+    std::string name;              
+    size_t first_index;            
+    size_t num_indices;            
+    GLenum rendering_mode;        
+    GLuint vertex_array_object_id; 
+    glm::vec3 bbox_min;           
     glm::vec3 bbox_max;
 };
-
-Player player;
-
-Rat rat;
 
 // DECLARAÇÃO DAS FUNÇÕES
 
@@ -117,9 +111,9 @@ void BuildTrianglesAndAddToVirtualScene(ObjModel *); // Constrói representaçã
 void ComputeNormals(ObjModel *model);                // Computa normais de um ObjModel, caso não existam.
 void LoadShadersFromFiles();                         // Carrega os shaders de vértice e fragmento, criando um programa de GPU
 GLuint LoadTextureImage(const char *filename);       // Função que carrega imagens de textura
-std::map<std::string, GLuint> LoadTexturesFromObjModel(ObjModel *model, std::string base_path);
+std::map<std::string, GLuint> GetTexturesFromMtl(ObjModel *object, std::string texture_path);
 void DrawVirtualObject(const char *object_name); // Desenha um objeto armazenado em g_VirtualScene
-void DrawVirtualObjectMtl(ObjModel *model, std::map<std::string, GLuint> textures_name_to_id, int obj_num);
+void DrawVirtualObjectWithMtl(ObjModel *objectmodel, std::map<std::string, GLuint> textures_name_to_id, int object_id);
 GLuint LoadShader_Vertex(const char *filename);                              // Carrega um vertex shader
 GLuint LoadShader_Fragment(const char *filename);                            // Carrega um fragment shader
 void LoadShader(const char *filename, GLuint shader_id);                     // Função utilizada pelas duas acima
@@ -139,7 +133,6 @@ void TextRendering_PrintMatrixVectorProductDivW(GLFWwindow *window, glm::mat4 M,
 
 // Funções relacionadas à janela OpenGL
 void TextRendering_ShowModelViewProjection(GLFWwindow *window, glm::mat4 projection, glm::mat4 view, glm::mat4 model, glm::vec4 p_model);
-void TextRendering_ShowEulerAngles(GLFWwindow *window);
 void TextRendering_ShowProjection(GLFWwindow *window);
 void TextRendering_ShowFramesPerSecond(GLFWwindow *window);
 
@@ -153,56 +146,45 @@ void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 
 // VARIÁVEIS GLOBAIS
 
+// Controle câmeras
 bool useLookAt = false;
 
-// A cena virtual é uma lista de objetos nomeados, guardados em um dicionário
-// (map).  Veja dentro da função BuildTrianglesAndAddToVirtualScene() como que são incluídos
-// objetos dentro da variável g_VirtualScene, e veja na função main() como
-// estes são acessados.
+// Variáveis jogo
+Player player;
+Rat rat;
+bool start_click = true;
+bool is_rat_active = true;
+float start_game = 6.0;
+float endgame = 4.0f;
+
+// Cena virtual
 std::map<std::string, SceneObject> g_VirtualScene;
 
-// Pilha que guardará as matrizes de modelagem.
+// Matrizes modelagem
 std::stack<glm::mat4> g_MatrixStack;
 
-// Razão de proporção da janela (largura/altura). Veja função FramebufferSizeCallback().
+// Tela e interação mouse
 float g_ScreenRatio = 1.0f;
-
-// Ângulos de Euler que controlam a rotação de um dos cubos da cena virtual
-float g_AngleX = 0.0f;
-float g_AngleY = 0.0f;
-float g_AngleZ = 0.0f;
-
-// "g_LeftMouseButtonPressed = true" se o usuário está com o botão esquerdo do mouse
-// pressionado no momento atual. Veja função MouseButtonCallback().
 bool g_LeftMouseButtonPressed = false;
-bool g_RightMouseButtonPressed = false;  // Análogo para botão direito do mouse
-bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mouse
+bool g_RightMouseButtonPressed = false; 
+bool g_MiddleMouseButtonPressed = false; 
+float g_ForearmAngleZ = 0.0f;
+float g_ForearmAngleX = 0.0f;
+float g_TorsoPositionX = 0.0f;
+float g_TorsoPositionY = 0.0f;
 
-// Variáveis que definem a câmera em coordenadas esféricas, controladas pelo
-// usuário através do mouse (veja função CursorPosCallback()). A posição
-// efetiva da câmera é calculada dentro da função main(), dentro do loop de
-// renderização.
+// câmera look at
 float g_CameraTheta = 0.0f;    // Ângulo no plano ZX em relação ao eixo Z
 float g_CameraPhi = 0.0f;      // Ângulo em relação ao eixo Y
 float g_CameraDistance = 3.5f; // Distância da câmera para a origem
 
-// Variáveis que controlam rotação do antebraço
-float g_ForearmAngleZ = 0.0f;
-float g_ForearmAngleX = 0.0f;
-
-// Variáveis que controlam translação do torso
-float g_TorsoPositionX = 0.0f;
-float g_TorsoPositionY = 0.0f;
-
-// Variável que controla o tipo de projeção utilizada: perspectiva ou ortográfica.
+// Tipo de projeção
 bool g_UsePerspectiveProjection = true;
 
-// Variável que controla se o texto informativo será mostrado na tela.
+// Texto informativo
 bool g_ShowInfoText = true;
 
-bool start_click = true;
-
-// Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
+// Variáveis que definem um programa de GPU (shaders).
 GLuint g_GpuProgramID = 0;
 GLint g_model_uniform;
 GLint g_view_uniform;
@@ -210,49 +192,40 @@ GLint g_projection_uniform;
 GLint g_object_id_uniform;
 GLint g_bbox_min_uniform;
 GLint g_bbox_max_uniform;
-GLint g_has_texture_uniform;             // NOVA: Uniform para indicar se há textura
-GLint g_material_Ka_uniform;             // NOVA: Uniform para material.ambient
-GLint g_material_Kd_uniform;             // NOVA: Uniform para material.diffuse
-GLint g_material_Ks_uniform;             // NOVA: Uniform para material.specular
-GLint g_material_Ns_uniform;             // NOVA: Uniform para material.shininess
-GLint g_material_d_uniform;              // NOVA: Uniform para material.dissolve
-GLint g_diffuse_texture_sampler_uniform; // NOVA: Uniform para o sampler da textura difusa
+GLint g_has_texture_uniform;             
+GLint g_diffuse_texture_sampler_uniform;
 
-// vetores da câmera
+// Câmera livre
 glm::vec3 camera_pos = glm::vec3(0.0f, -0.5f, 5.0f);
 glm::vec3 camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-// mouse sensitivity
+// Sensibilidade mouse
 float sensitivity = 0.1f;
 
-// movimentação
+// Controle de tempo para movimentação
 float last_time = 0.0f;
 float time_diff = 0.0f;
 
-// velocidade do jogador
+// Velocidade Player
 float normal_speed = 10.5f;
 float run_speed = 15.5f;
 
-// Número de texturas carregadas pela função LoadTextureImage()
+// Texturas
 GLuint g_NumLoadedTextures = 0;
 GLuint g_CrosshairShaderID = 0;
 GLuint g_CrosshairVao = 0;
 
+// Interação objetos cena
 std::string interactive_text = "";
 float interactive_timer = 0.0f;
 bool is_e_pressed = false;
-
-bool is_rat_active = true;
-float start_game = 6.0;
-float endgame = 4.0f;
 
 // MAIN
 
 int main(int argc, char *argv[])
 {
-    // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
-    // sistema operacional, onde poderemos renderizar com OpenGL.
+    // Inicialização janela
     int success = glfwInit();
     if (!success)
     {
@@ -260,10 +233,9 @@ int main(int argc, char *argv[])
         std::exit(EXIT_FAILURE);
     }
 
-    // Definimos o callback para impressão de erros da GLFW no terminal
     glfwSetErrorCallback(ErrorCallback);
 
-    // Pedimos para utilizar OpenGL versão 3.3 (ou superior)
+    // OpenGL versão 3.3 (ou superior)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
@@ -271,16 +243,12 @@ int main(int argc, char *argv[])
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    // Pedimos para utilizar o perfil "core", isto é, utilizaremos somente as
-    // funções modernas de OpenGL.
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // Criamos uma janela do sistema operacional, com 800 colunas e 600 linhas
-    // de pixels, e com título "INF01047 ...".
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
 
-    // Create full screen window
+    // Fullscreen
     GLFWwindow *window;
     window = glfwCreateWindow(mode->width, mode->height, "Aline e Mari", monitor, NULL);
     if (!window)
@@ -302,20 +270,13 @@ int main(int argc, char *argv[])
     // ... ou rolar a "rodinha" do mouse.
     glfwSetScrollCallback(window, ScrollCallback);
 
-    // Indicamos que as chamadas OpenGL deverão renderizar nesta janela
     glfwMakeContextCurrent(window);
 
-    // Carregamento de todas funções definidas por OpenGL 3.3, utilizando a
-    // biblioteca GLAD.
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    // Definimos a função de callback que será chamada sempre que a janela for
-    // redimensionada, por consequência alterando o tamanho do "framebuffer"
-    // (região de memória onde são armazenados os pixels da imagem).
     glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
-    FramebufferSizeCallback(window, 800, 600); // Forçamos a chamada do callback acima, para definir g_ScreenRatio.
+    FramebufferSizeCallback(window, 800, 600); 
 
-    // Imprimimos no terminal informações sobre a GPU do sistema
     const GLubyte *vendor = glGetString(GL_VENDOR);
     const GLubyte *renderer = glGetString(GL_RENDERER);
     const GLubyte *glversion = glGetString(GL_VERSION);
@@ -323,16 +284,13 @@ int main(int argc, char *argv[])
 
     printf("GPU: %s, %s, OpenGL %s, GLSL %s\n", vendor, renderer, glversion, glslversion);
 
-    // Carregamos os shaders de vértices e de fragmentos que serão utilizados
-    // para renderização. Veja slides 180-200 do documento Aula_03_Rendering_Pipeline_Grafico.pdf.
-    //
     LoadShadersFromFiles();
 
-    // Construímos a representação de objetos geométricos através de malhas de triângulos
+    // Contrução da representação geométrica dos objetos (malha de triângulos)
     ObjModel roommodel("../../data/room/V7NCMVM2CESW8Q4IP1OHYDUES.obj");
     ComputeNormals(&roommodel);
     BuildTrianglesAndAddToVirtualScene(&roommodel);
-    std::map<std::string, GLuint> room_textures = LoadTexturesFromObjModel(&roommodel, "../../data/room/");
+    std::map<std::string, GLuint> room_textures = GetTexturesFromMtl(&roommodel, "../../data/room/");
 
     ObjModel floormodel("../../data/floor/plane.obj");
     ComputeNormals(&floormodel);
@@ -341,72 +299,72 @@ int main(int argc, char *argv[])
     ObjModel bedmodel("../../data/bed/RFSBI1TUMBM1R2T06LF7JZ3LC.obj");
     ComputeNormals(&bedmodel);
     BuildTrianglesAndAddToVirtualScene(&bedmodel);
-    std::map<std::string, GLuint> bed_textures = LoadTexturesFromObjModel(&bedmodel, "../../data/bed/");
+    std::map<std::string, GLuint> bed_textures = GetTexturesFromMtl(&bedmodel, "../../data/bed/");
 
     ObjModel stovemodel("../../data/stove/75VMC3RPY8QVUEA16B08ZZLW1.obj");
     ComputeNormals(&stovemodel);
     BuildTrianglesAndAddToVirtualScene(&stovemodel);
-    std::map<std::string, GLuint> stove_textures = LoadTexturesFromObjModel(&stovemodel, "../../data/stove/");
+    std::map<std::string, GLuint> stove_textures = GetTexturesFromMtl(&stovemodel, "../../data/stove/");
 
     ObjModel sofamodel("../../data/sofa/ACNAORMOA9N1GSJY0ZMQKTLCE.obj");
     ComputeNormals(&sofamodel);
     BuildTrianglesAndAddToVirtualScene(&sofamodel);
-    std::map<std::string, GLuint> sofa_textures = LoadTexturesFromObjModel(&sofamodel, "../../data/sofa/");
+    std::map<std::string, GLuint> sofa_textures = GetTexturesFromMtl(&sofamodel, "../../data/sofa/");
 
     ObjModel doormodel("../../data/door/IBWGNOPUJHOS4JCGGWUZYBYR5.obj");
     ComputeNormals(&doormodel);
     BuildTrianglesAndAddToVirtualScene(&doormodel);
-    std::map<std::string, GLuint> door_textures = LoadTexturesFromObjModel(&doormodel, "../../data/door/");
+    std::map<std::string, GLuint> door_textures = GetTexturesFromMtl(&doormodel, "../../data/door/");
 
     ObjModel cabinet1model("../../data/cabinet1/LKB0Z15Y2JSWNIKSJZ9B8WCNY.obj");
     ComputeNormals(&cabinet1model);
     BuildTrianglesAndAddToVirtualScene(&cabinet1model);
-    std::map<std::string, GLuint> cabinet1_textures = LoadTexturesFromObjModel(&cabinet1model, "../../data/cabinet1/");
+    std::map<std::string, GLuint> cabinet1_textures = GetTexturesFromMtl(&cabinet1model, "../../data/cabinet1/");
 
     ObjModel tvmodel("../../data/tv/R471NYP16HGJGU9S7TBFXBO3E.obj");
     ComputeNormals(&tvmodel);
     BuildTrianglesAndAddToVirtualScene(&tvmodel);
-    std::map<std::string, GLuint> tv_textures = LoadTexturesFromObjModel(&tvmodel, "../../data/tv/");
+    std::map<std::string, GLuint> tv_textures = GetTexturesFromMtl(&tvmodel, "../../data/tv/");
 
     ObjModel radiatormodel("../../data/radiator/LBIEJVJ5WQ38A21GOY8QEG7K4.obj");
     ComputeNormals(&radiatormodel);
     BuildTrianglesAndAddToVirtualScene(&radiatormodel);
-    std::map<std::string, GLuint> radiator_textures = LoadTexturesFromObjModel(&radiatormodel, "../../data/radiator/");
+    std::map<std::string, GLuint> radiator_textures = GetTexturesFromMtl(&radiatormodel, "../../data/radiator/");
 
     ObjModel ratmodel("../../data/rat/8LTPBJCTY0WWDFOHE0U5BMLHQ.obj");
     ComputeNormals(&ratmodel);
     BuildTrianglesAndAddToVirtualScene(&ratmodel);
-    std::map<std::string, GLuint> rat_textures = LoadTexturesFromObjModel(&ratmodel, "../../data/rat/");
+    std::map<std::string, GLuint> rat_textures = GetTexturesFromMtl(&ratmodel, "../../data/rat/");
 
     ObjModel tablemodel("../../data/table/YZVB78847CT0OE8WDRU4I9Q9B.obj");
     ComputeNormals(&tablemodel);
     BuildTrianglesAndAddToVirtualScene(&tablemodel);
-    std::map<std::string, GLuint> table_textures = LoadTexturesFromObjModel(&tablemodel, "../../data/table/");
+    std::map<std::string, GLuint> table_textures = GetTexturesFromMtl(&tablemodel, "../../data/table/");
 
     ObjModel breadmodel("../../data/bread/4RELQU04UP15TUDBLN1483PCN.obj");
     ComputeNormals(&breadmodel);
     BuildTrianglesAndAddToVirtualScene(&breadmodel);
-    std::map<std::string, GLuint> bread_textures = LoadTexturesFromObjModel(&breadmodel, "../../data/bread/");
+    std::map<std::string, GLuint> bread_textures = GetTexturesFromMtl(&breadmodel, "../../data/bread/");
     
     ObjModel refrigeratormodel("../../data/refrigerator/92F62XNUJIV58FF7HGW9TYE8B.obj");
     ComputeNormals(&refrigeratormodel);
     BuildTrianglesAndAddToVirtualScene(&refrigeratormodel);
-    std::map<std::string, GLuint> refrigerator_textures = LoadTexturesFromObjModel(&refrigeratormodel, "../../data/refrigerator/");
+    std::map<std::string, GLuint> refrigerator_textures = GetTexturesFromMtl(&refrigeratormodel, "../../data/refrigerator/");
     
     ObjModel sinkmodel("../../data/sink/7W8YGL7KDOLC069L6W1MQOY9V.obj");
     ComputeNormals(&sinkmodel);
     BuildTrianglesAndAddToVirtualScene(&sinkmodel);
-    std::map<std::string, GLuint> sink_textures = LoadTexturesFromObjModel(&sinkmodel, "../../data/sink/");
+    std::map<std::string, GLuint> sink_textures = GetTexturesFromMtl(&sinkmodel, "../../data/sink/");
     
     ObjModel remotemodel("../../data/remote/2T1VFORH5Q21VLSM8ALF91TAA.obj");
     ComputeNormals(&remotemodel);
     BuildTrianglesAndAddToVirtualScene(&remotemodel);
-    std::map<std::string, GLuint> remote_textures = LoadTexturesFromObjModel(&remotemodel, "../../data/remote/");
+    std::map<std::string, GLuint> remote_textures = GetTexturesFromMtl(&remotemodel, "../../data/remote/");
 
     ObjModel fanmodel("../../data/fan/V0TORHEAQ151GVFM0YPMY8H13.obj");
     ComputeNormals(&fanmodel);
     BuildTrianglesAndAddToVirtualScene(&fanmodel);
-    std::map<std::string, GLuint> fan_textures = LoadTexturesFromObjModel(&fanmodel, "../../data/fan/");
+    std::map<std::string, GLuint> fan_textures = GetTexturesFromMtl(&fanmodel, "../../data/fan/");
 
     if (argc > 1)
     {
@@ -414,17 +372,15 @@ int main(int argc, char *argv[])
         BuildTrianglesAndAddToVirtualScene(&model);
     }
 
-    // Inicializamos o código para renderização de texto.
     TextRendering_Init();
 
-    // Habilitamos o Z-buffer. Veja slides 104-116 do documento Aula_09_Projecoes.pdf.
     glEnable(GL_DEPTH_TEST);
 
-    // Habilitamos o Backface Culling. Veja slides 8-13 do documento Aula_02_Fundamentos_Matematicos.pdf, slides 23-34 do documento Aula_13_Clipping_and_Culling.pdf e slides 112-123 do documento Aula_14_Laboratorio_3_Revisao.pdf.
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+    // Inicialização do Player
     player.position = glm::vec3(0.0f, 0.0f, 2.0f);
     player.front_vector = glm::vec3(0.0f, 0.0f, -1.0f);
     player.up_vector = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -433,15 +389,19 @@ int main(int argc, char *argv[])
         glm::vec3(0.3f, 0.8f, 0.3f)     // max
     };
 
-    // FONTE: Chat gpt + gemini - Não estávamos conseguindo desenhar o ponto preto
-    // Os arquivos de vertex e fragment foram obtidos a partir dos labs
+    // FONTE: Códigos gerados por ChatGPT + Gemini
+    // Não estávamos conseguindo desenhar o ponto preto que mira os objetos para que o ususário possa interagir com eles
+    // Trechos relacionados ao ponto foram obtidos a partir dos códigos gerados pela FONTE
+
+    // Os arquivos de vertex e fragment foram modificados por nós mesmas a partir dos laboratórios
     GLuint crosshair_vertex_shader_id = LoadShader_Vertex("../../src/crosshair_vertex.glsl");
     GLuint crosshair_fragment_shader_id = LoadShader_Fragment("../../src/crosshair_fragment.glsl");
     g_CrosshairShaderID = CreateGpuProgram(crosshair_vertex_shader_id, crosshair_fragment_shader_id);
 
-    // 2. Define a geometria do crosshair (um pequeno quadrado)
-    float crosshair_size = 0.005f; // Tamanho do ponto (0.01 = 1% da altura da tela). Aumente para um ponto maior.
+    // Define a geometria do crosshair (um pequeno quadrado)
+    float crosshair_size = 0.005f; // Tamanho do ponto
     float crosshair_vertices[] = {
+
         // Primeiro triângulo do quadrado
         -crosshair_size, -crosshair_size, // Canto inferior esquerdo
         crosshair_size, -crosshair_size,  // Canto inferior direito
@@ -453,7 +413,7 @@ int main(int argc, char *argv[])
         -crosshair_size, crosshair_size   // Canto superior esquerdo
     };
 
-    // 3. Cria o objeto (VAO) e envia os vértices para a GPU
+    // Cria o objeto (VAO) e envia os vértices para a GPU
     GLuint crosshair_vbo;
     glGenVertexArrays(1, &g_CrosshairVao);
     glGenBuffers(1, &crosshair_vbo);
@@ -468,6 +428,8 @@ int main(int argc, char *argv[])
     glBindVertexArray(0); // Desvincula para segurança
 
     std::vector<CollidableObject> scene_collidables;
+
+    // Matrizes de modelagem dos objetos
 
     // Matriz ROOM
     float room_scale1 = 20.0f;
@@ -543,7 +505,7 @@ int main(int argc, char *argv[])
 
     CollidableObject stove;
     stove.shape_type = ShapeType::SHAPE_AABB;
-    stove.aabb.min = glm::vec3(15.11f, -5.0f, -19.35f);
+    stove.aabb.min = glm::vec3(15.11f, -8.0f, -19.35f);
     stove.aabb.max = glm::vec3(19.5f, 5.0f, -13.61f);
     stove.text = "Voce desligou o fogao";
     stove.is_interactive = true;
@@ -569,7 +531,7 @@ int main(int argc, char *argv[])
 
     CollidableObject door;
     door.shape_type = ShapeType::SHAPE_AABB;
-    door.aabb.min = glm::vec3(-19.0f, -5.0f, -18.0f);
+    door.aabb.min = glm::vec3(-19.0f, -8.0f, -18.0f);
     door.aabb.max = glm::vec3(-19.0f, 5.0f, -12.0f);
     door.text = "Voce trancou a porta";
     door.is_interactive = true;
@@ -600,7 +562,7 @@ int main(int argc, char *argv[])
 
     CollidableObject radiator;
     radiator.shape_type = ShapeType::SHAPE_AABB;
-    radiator.aabb.min = glm::vec3(-19.7f, -5.0f, 1.5f);
+    radiator.aabb.min = glm::vec3(-19.7f, -8.0f, 1.5f);
     radiator.aabb.max = glm::vec3(-18.0f, 5.0f, 7.0f);
     radiator.text = "Voce desligou o radiador";
     radiator.is_interactive = true;
@@ -627,56 +589,61 @@ int main(int argc, char *argv[])
     rat_placeholder.is_interactive = true;
     scene_collidables.push_back(rat_placeholder);
 
-    // Matriz BREAD
-        float bread_scale = 0.5f;
-        glm::vec3 bread_position = glm::vec3(4.0f, -4.5f, -5.0f);
-        glm::mat4 bread_model_matrix = Matrix_Translate(bread_position.x, bread_position.y, bread_position.z) * Matrix_Scale(bread_scale, bread_scale, bread_scale) * Matrix_Rotate_Y(0.60f);
+    // Matriz BREAD1
+    float bread1_scale = 0.5f;
+    glm::vec3 bread1_position = glm::vec3(4.0f, -4.5f, -5.0f);
+    glm::mat4 bread1_model_matrix = Matrix_Translate(bread1_position.x, bread1_position.y, bread1_position.z) * Matrix_Scale(bread1_scale, bread1_scale, bread1_scale) * Matrix_Rotate_Y(0.60f);
 
-        // Matriz REFRIGERATOR
-        float refrigerator_scale = 4.0f;
-        glm::vec3 refrigerator_position = glm::vec3(17.5f, -4.0f, -5.5f);
-        glm::mat4 refrigerator_model_matrix = Matrix_Translate(refrigerator_position.x, refrigerator_position.y, refrigerator_position.z) * Matrix_Scale(refrigerator_scale, refrigerator_scale, refrigerator_scale) * Matrix_Rotate_Y(0.0f);
+    // Matriz BREAD2
+    float bread2_scale = 0.5f;
+    glm::vec3 bread2_position = glm::vec3(4.0f, -4.5f, -3.0f);
+    glm::mat4 bread2_model_matrix = Matrix_Translate(bread2_position.x, bread2_position.y, bread2_position.z) * Matrix_Scale(bread2_scale, bread2_scale, bread2_scale) * Matrix_Rotate_Y(-0.60f);
 
-        CollidableObject refrigerator;
-        refrigerator.shape_type = ShapeType::SHAPE_AABB;
-        refrigerator.aabb.min = glm::vec3(13.58f, -5.0f, -8.2f);
-        refrigerator.aabb.max = glm::vec3(19.37f, 5.0f, -1.99f);
-        refrigerator.text = "";
-        refrigerator.is_interactive = false;
-        scene_collidables.push_back(refrigerator);
+    // Matriz REFRIGERATOR
+    float refrigerator_scale = 4.0f;
+    glm::vec3 refrigerator_position = glm::vec3(17.5f, -4.0f, -5.5f);
+    glm::mat4 refrigerator_model_matrix = Matrix_Translate(refrigerator_position.x, refrigerator_position.y, refrigerator_position.z) * Matrix_Scale(refrigerator_scale, refrigerator_scale, refrigerator_scale) * Matrix_Rotate_Y(0.0f);
 
-        // Matriz SINK
-        float sink_scale = 2.5f;
-        glm::vec3 sink_position = glm::vec3(17.0f, -5.5f, -12.0f);
-        glm::mat4 sink_model_matrix = Matrix_Translate(sink_position.x, sink_position.y, sink_position.z) * Matrix_Scale(sink_scale, sink_scale, sink_scale) * Matrix_Rotate_Y(0.0f);
+    CollidableObject refrigerator;
+    refrigerator.shape_type = ShapeType::SHAPE_AABB;
+    refrigerator.aabb.min = glm::vec3(13.58f, -5.0f, -8.2f);
+    refrigerator.aabb.max = glm::vec3(19.37f, 5.0f, -1.99f);
+    refrigerator.text = "";
+    refrigerator.is_interactive = false;
+    scene_collidables.push_back(refrigerator);
 
-        CollidableObject sink;
-        sink.shape_type = ShapeType::SHAPE_AABB;
-        sink.aabb.min = glm::vec3(14.5f, -5.0f, -14.4f);
-        sink.aabb.max = glm::vec3(19.65f, 5.0f, -8.6f);
-        sink.text = "";
-        sink.is_interactive = false;
-        scene_collidables.push_back(sink);
+    // Matriz SINK
+    float sink_scale = 2.5f;
+    glm::vec3 sink_position = glm::vec3(17.0f, -5.5f, -12.0f);
+    glm::mat4 sink_model_matrix = Matrix_Translate(sink_position.x, sink_position.y, sink_position.z) * Matrix_Scale(sink_scale, sink_scale, sink_scale) * Matrix_Rotate_Y(0.0f);
 
-        // Matriz REMOTE
-        float remote_scale = 0.6f;
-        glm::vec3 remote_position = glm::vec3(-20.3f, -2.0f, -11.0f);
-        glm::mat4 remote_model_matrix = Matrix_Translate(remote_position.x, remote_position.y, remote_position.z) * Matrix_Scale(remote_scale, remote_scale, remote_scale) * Matrix_Rotate_Y(-1.60f) * Matrix_Rotate_X(-1.58f);
+    CollidableObject sink;
+    sink.shape_type = ShapeType::SHAPE_AABB;
+    sink.aabb.min = glm::vec3(14.5f, -5.0f, -14.4f);
+    sink.aabb.max = glm::vec3(19.65f, 5.0f, -8.6f);
+    sink.text = "";
+    sink.is_interactive = false;
+    scene_collidables.push_back(sink);
 
-        CollidableObject remote;
-        remote.shape_type = ShapeType::SHAPE_AABB;
-        remote.aabb.min = glm::vec3(-22.67f, -5.0f, -14.7f);
-        remote.aabb.max = glm::vec3(-16.62f, 5.0f, -09.79f);
-        remote.text = "Voce desligou o ventilador";
-        remote.is_interactive = true;
-        scene_collidables.push_back(remote);
+    // Matriz REMOTE
+    float remote_scale = 0.6f;
+    glm::vec3 remote_position = glm::vec3(-20.3f, -2.0f, -11.0f);
+    glm::mat4 remote_model_matrix = Matrix_Translate(remote_position.x, remote_position.y, remote_position.z) * Matrix_Scale(remote_scale, remote_scale, remote_scale) * Matrix_Rotate_Y(-1.60f) * Matrix_Rotate_X(-1.58f);
 
-        // Matriz FAN
-        float fan_scale = 3.0f;
-        glm::vec3 fan_position = glm::vec3(-10.0f, 6.0f, 10.0f);
-        glm::mat4 fan_model_matrix = Matrix_Translate(fan_position.x, fan_position.y, fan_position.z) * Matrix_Scale(fan_scale, fan_scale, fan_scale);
+    CollidableObject remote;
+    remote.shape_type = ShapeType::SHAPE_AABB;
+    remote.aabb.min = glm::vec3(-19.6f, -6.0f, -11.6f);
+    remote.aabb.max = glm::vec3(-18.2f, 6.0f, -10.2f);
+    remote.text = "Voce desligou o ventilador";
+    remote.is_interactive = true;
+    scene_collidables.push_back(remote);
 
-    // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
+    // Matriz FAN
+    float fan_scale = 3.0f;
+    glm::vec3 fan_position = glm::vec3(-10.0f, 6.0f, 10.0f);
+    glm::mat4 fan_model_matrix = Matrix_Translate(fan_position.x, fan_position.y, fan_position.z) * Matrix_Scale(fan_scale, fan_scale, fan_scale);
+
+    // Loop de renderização (finaliza ao fechar janela)
     while (!glfwWindowShouldClose(window))
     {
         std::vector<Plane> room_planes;
@@ -686,10 +653,8 @@ int main(int argc, char *argv[])
         time_diff = current_time - last_time;
         last_time = current_time;
 
-        glClearColor(0.05f, 0.05f, 0.15f, 1.0f);
+        glClearColor(0.05f, 0.05f, 0.15f, 1.0f); // Cor do fundo simulando céu à noite
 
-        // "Pintamos" todos os pixels do framebuffer com a cor definida acima,
-        // e também resetamos todos os pixels do Z-buffer (depth buffer).
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(g_GpuProgramID);
@@ -708,11 +673,11 @@ int main(int argc, char *argv[])
             }
         }
 
-        glm::mat4 view; // Declarada fora do if/else
+        glm::mat4 view;
 
         if (!useLookAt)
         {
-            // Executa a lógica de movimento e cálculo da view para a Câmera Livre
+            // Usa câmera livre
             UpdatePlayerPosition(window, time_diff, player, scene_collidables);
 
              if (is_e_pressed)
@@ -740,7 +705,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            // Calcula a view para a Câmera Orbital (LookAt)
+            // Usa câmera look at
             float r = g_CameraDistance;
             float y = r * sin(g_CameraPhi);
             float z = r * cos(g_CameraPhi) * cos(g_CameraTheta);
@@ -753,7 +718,6 @@ int main(int argc, char *argv[])
             view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
         }
 
-        // Agora computamos a matriz de Projeção.
         glm::mat4 projection;
 
         float nearplane = -0.1f;   // Posição do "near plane"
@@ -777,32 +741,31 @@ int main(int argc, char *argv[])
 
         glm::mat4 model;
 
-        // Enviamos as matrizes "view" e "projection" para a placa de vídeo
-        // (GPU). Veja o arquivo "shader_vertex.glsl", onde estas são
-        // efetivamente aplicadas em todos os pontos.
         glUniformMatrix4fv(g_view_uniform, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(g_projection_uniform, 1, GL_FALSE, glm::value_ptr(projection));
 
-#define ROOM 0
-#define BED 1
-#define FLOOR 2
-#define STOVE 3
-#define SOFA 4
-#define DOOR 5
-#define CABINET1 6
-#define TV 7
-#define RADIATOR 8
-#define RAT 9
-#define TABLE 10
-#define BREAD 11
-#define REFRIGERATOR 12
-#define SINK 13
-#define REMOTE 14
-#define FAN 15
+        // Constantes de diferenciação dos objetos para desenho
+        #define ROOM 0
+        #define BED 1
+        #define FLOOR 2
+        #define STOVE 3
+        #define SOFA 4
+        #define DOOR 5
+        #define CABINET1 6
+        #define TV 7
+        #define RADIATOR 8
+        #define RAT 9
+        #define TABLE 10
+        #define BREAD 11
+        #define REFRIGERATOR 12
+        #define SINK 13
+        #define REMOTE 14
+        #define FAN 15
 
+        // Desenho dos objetos
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(room_model_matrix));
-        DrawVirtualObjectMtl(&roommodel, room_textures, ROOM);
+        DrawVirtualObjectWithMtl(&roommodel, room_textures, ROOM);
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(floor_model_matrix));
@@ -811,75 +774,71 @@ int main(int argc, char *argv[])
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(bed_model_matrix));
-        DrawVirtualObjectMtl(&bedmodel, bed_textures, BED);
+        DrawVirtualObjectWithMtl(&bedmodel, bed_textures, BED);
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(stove_model_matrix));
-        DrawVirtualObjectMtl(&stovemodel, stove_textures, STOVE);
+        DrawVirtualObjectWithMtl(&stovemodel, stove_textures, STOVE);
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(sofa_model_matrix));
-        DrawVirtualObjectMtl(&sofamodel, sofa_textures, SOFA);
+        DrawVirtualObjectWithMtl(&sofamodel, sofa_textures, SOFA);
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(door_model_matrix));
-        DrawVirtualObjectMtl(&doormodel, door_textures, DOOR);
+        DrawVirtualObjectWithMtl(&doormodel, door_textures, DOOR);
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(cabinet1_model_matrix));
-        DrawVirtualObjectMtl(&cabinet1model, cabinet1_textures, CABINET1);
+        DrawVirtualObjectWithMtl(&cabinet1model, cabinet1_textures, CABINET1);
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(tv_model_matrix));
-        DrawVirtualObjectMtl(&tvmodel, tv_textures, CABINET1);
+        DrawVirtualObjectWithMtl(&tvmodel, tv_textures, CABINET1);
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(radiator_model_matrix));
-        DrawVirtualObjectMtl(&radiatormodel, radiator_textures, RADIATOR);
+        DrawVirtualObjectWithMtl(&radiatormodel, radiator_textures, RADIATOR);
 
         if (is_rat_active)
         {
             glActiveTexture(GL_TEXTURE0);
             glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(rat.model_matrix));
-            DrawVirtualObjectMtl(&ratmodel, rat_textures, RAT);
+            DrawVirtualObjectWithMtl(&ratmodel, rat_textures, RAT);
         }
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(table_model_matrix));
-        DrawVirtualObjectMtl(&tablemodel, table_textures, TABLE);
+        DrawVirtualObjectWithMtl(&tablemodel, table_textures, TABLE);
 
         glActiveTexture(GL_TEXTURE0);
-        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(bread_model_matrix));
-        DrawVirtualObjectMtl(&breadmodel, bread_textures, BREAD);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(bread1_model_matrix));
+        DrawVirtualObjectWithMtl(&breadmodel, bread_textures, BREAD);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(bread2_model_matrix));
+        DrawVirtualObjectWithMtl(&breadmodel, bread_textures, BREAD);
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(refrigerator_model_matrix));
-        DrawVirtualObjectMtl(&refrigeratormodel, refrigerator_textures, REFRIGERATOR);
+        DrawVirtualObjectWithMtl(&refrigeratormodel, refrigerator_textures, REFRIGERATOR);
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(sink_model_matrix));
-        DrawVirtualObjectMtl(&sinkmodel, sink_textures, SINK);
+        DrawVirtualObjectWithMtl(&sinkmodel, sink_textures, SINK);
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(remote_model_matrix));
-        DrawVirtualObjectMtl(&remotemodel, remote_textures, REMOTE);
+        DrawVirtualObjectWithMtl(&remotemodel, remote_textures, REMOTE);
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(fan_model_matrix));
-        DrawVirtualObjectMtl(&fanmodel, fan_textures, FAN);
+        DrawVirtualObjectWithMtl(&fanmodel, fan_textures, FAN);
 
-        // Imprimimos na tela os ângulos de Euler que controlam a rotação do
-        // terceiro cubo.
-        TextRendering_ShowEulerAngles(window);
-
-        // Imprimimos na informação sobre a matriz de projeção sendo utilizada.
         TextRendering_ShowProjection(window);
-
-        // Imprimimos na tela informação sobre o número de quadros renderizados
-        // por segundo (frames per second).
         TextRendering_ShowFramesPerSecond(window);
 
-        glDisable(GL_DEPTH_TEST); // Para o crosshair ficar sempre por cima
+        glDisable(GL_DEPTH_TEST); // Para o crosshair ficar sobre os objetos
 
         if (interactive_timer > 0.0f)
         {
@@ -905,31 +864,18 @@ int main(int argc, char *argv[])
         glBindVertexArray(g_CrosshairVao); // Ativa o objeto do crosshair
 
         // Desenha as 4 vértices como 2 linhas separadas
-        // (Assumindo que você ainda tem 4 vértices no seu VAO)
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         glBindVertexArray(0); // Desliga o VAO por segurança
         glEnable(GL_DEPTH_TEST);
 
-        // O framebuffer onde OpenGL executa as operações de renderização não
-        // é o mesmo que está sendo mostrado para o usuário, caso contrário
-        // seria possível ver artefatos conhecidos como "screen tearing". A
-        // chamada abaixo faz a troca dos buffers, mostrando para o usuário
-        // tudo que foi renderizado pelas funções acima.
-        // Veja o link: https://en.wikipedia.org/w/index.php?title=Multiple_buffering&oldid=793452829#Double_buffering_in_computer_graphics
+    
         glfwSwapBuffers(window);
-
-        // Verificamos com o sistema operacional se houve alguma interação do
-        // usuário (teclado, mouse, ...). Caso positivo, as funções de callback
-        // definidas anteriormente usando glfwSet*Callback() serão chamadas
-        // pela biblioteca GLFW.
         glfwPollEvents();
     }
 
-    // Finalizamos o uso dos recursos do sistema operacional
+    // Finalização
     glfwTerminate();
-
-    // Fim do programa
     return 0;
 }
 
@@ -953,176 +899,134 @@ GLuint LoadTextureImage(const char *filename, int dummy_param)
 
     printf("OK (%dx%d).\n", width, height);
 
-    // Agora criamos objetos na GPU com OpenGL para armazenar a textura
     GLuint texture_id;
-    GLuint sampler_id; // Samplers são geralmente vinculados uma vez e reutilizados, mas aqui é criado por textura.
-                       // Para um controle mais eficiente, samplers podem ser globais ou gerenciados separadamente.
+    GLuint sampler_id; 
+                       
     glGenTextures(1, &texture_id);
     glGenSamplers(1, &sampler_id);
 
-    // Vinculamos a textura criada para configurá-la
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
-    // Veja slides 95-96 do documento Aula_20_Mapeamento_de_Texturas.pdf
     glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    // Parâmetros de amostragem da textura.
     glSamplerParameteri(sampler_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glSamplerParameteri(sampler_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // Agora enviamos a imagem lida do disco para a GPU
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
     glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
 
-    // Note: A unidade de textura `textureunit` e `glActiveTexture` foram movidas.
-    // O gerenciamento de `textureunit` deve ser feito pela função chamadora
-    // (LoadTexturesFromObjModel) ou de forma global para alocação de unidades.
-    // Aqui, apenas criamos e configuramos a textura e o sampler.
-
     glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    // Após configurar a textura, podemos desvinculá-la para não afetar outras operações.
-    glBindTexture(GL_TEXTURE_2D, 0); // Desvincula a textura atual
-    // Sampler pode ser vinculado posteriormente na fase de desenho com glBindTextureUnit ou glBindSampler
-
+    glBindTexture(GL_TEXTURE_2D, 0); 
+    
     stbi_image_free(data);
 
-    // Remove a linha `g_NumLoadedTextures += 1;` daqui.
-    // Esta variável deve ser gerenciada pela função que carrega múltiplas texturas
-    // e aloca unidades de textura, como `LoadTexturesFromObjModel` ou um gerenciador de texturas.
-
-    return texture_id; // Retorna o ID da textura gerado
+    return texture_id; // Usado em objetos que possuem .tml
 }
-// Função que desenha um objeto armazenado em g_VirtualScene. Veja definição
-// dos objetos na função BuildTrianglesAndAddToVirtualScene().
+
+// Função que desenha um objeto armazenado em g_VirtualScene que não possuem .mtl
 void DrawVirtualObject(const char *object_name)
 {
-    // "Ligamos" o VAO. Informamos que queremos utilizar os atributos de
-    // vértices apontados pelo VAO criado pela função BuildTrianglesAndAddToVirtualScene(). Veja
-    // comentários detalhados dentro da definição de BuildTrianglesAndAddToVirtualScene().
+    // "Ligamos" o VAO
     glBindVertexArray(g_VirtualScene[object_name].vertex_array_object_id);
 
-    // Setamos as variáveis "bbox_min" e "bbox_max" do fragment shader
-    // com os parâmetros da axis-aligned bounding box (AABB) do modelo.
+    // Setamos as variáveis "bbox_min" e "bbox_max" do fragment shader com os parâmetros da axis-aligned bounding box (AABB) do modelo.
     glm::vec3 bbox_min = g_VirtualScene[object_name].bbox_min;
     glm::vec3 bbox_max = g_VirtualScene[object_name].bbox_max;
     glUniform4f(g_bbox_min_uniform, bbox_min.x, bbox_min.y, bbox_min.z, 1.0f);
     glUniform4f(g_bbox_max_uniform, bbox_max.x, bbox_max.y, bbox_max.z, 1.0f);
 
-    // Pedimos para a GPU rasterizar os vértices dos eixos XYZ
-    // apontados pelo VAO como linhas. Veja a definição de
-    // g_VirtualScene[""] dentro da função BuildTrianglesAndAddToVirtualScene(), e veja
-    // a documentação da função glDrawElements() em
-    // http://docs.gl/gl3/glDrawElements.
+    // Pedimos para a GPU rasterizar os vértices dos eixos XYZ apontados pelo VAO como linhas.
     glDrawElements(
         g_VirtualScene[object_name].rendering_mode,
         g_VirtualScene[object_name].num_indices,
         GL_UNSIGNED_INT,
         (void *)(g_VirtualScene[object_name].first_index * sizeof(GLuint)));
 
-    // "Desligamos" o VAO, evitando assim que operações posteriores venham a
-    // alterar o mesmo. Isso evita bugs.
+    // "Desligamos" o VAO
     glBindVertexArray(0);
 }
 
-void DrawVirtualObjectMtl(ObjModel *model, std::map<std::string, GLuint> textures_name_to_id, int obj_num)
+// FONTE: Códigos gerados por ChatGPT + Gemini
+// Não estávamos conseguindo enviar as imagens texturas dos objetos do arquivo .mtl para os shaders
+// Conseguimos enviar as imagens adaptando códigos gerados pela FONTE, porém não conseguimos passar as informações para cálulo de iluminação
+// Por conta disso, as informações de iluminação foram colocadas manualmente nos shaders
+// Trechos relacionados foram adaptados a partir dos códigos gerados pela FONTE para as funções DrawVirtualObjectWithMtl() e GetTexturesFromMtl
+
+// Desenha objetos que possuem arquivo .mtl
+void DrawVirtualObjectWithMtl(ObjModel *object, std::map<std::string, GLuint> textures_name_to_id, int object_id)
 {
-    // NOVO: Use size_t para o contador do loop para evitar o warning de signedness
-    for (size_t i = 0; i < model->shapes.size(); i++)
+    for (size_t i = 0; i < object->shapes.size(); i++)
     {
-        const auto &shape = model->shapes[i];
+        const auto &shape = object->shapes[i];
         int material_id = shape.mesh.material_ids.empty() ? -1 : shape.mesh.material_ids[0];
         if (material_id < 0)
             continue;
-        const auto &material = model->materials[material_id];
+        const auto &material = object->materials[material_id];
 
-        // Ative a textura difusa do material, se existir
-        if (!material.diffuse_texname.empty())
-        {
-            // Diz ao shader que TEMOS uma textura para usar
+        // Ative a textura difusa do material caso exista no .mtl
+        if (!material.diffuse_texname.empty()) {
             glUniform1i(g_has_texture_uniform, 1);
             GLuint texture_id = textures_name_to_id[material.diffuse_texname];
-            glActiveTexture(GL_TEXTURE0); // Ativa a unidade de textura 0
+            glActiveTexture(GL_TEXTURE0); // Textura em Image0
             glBindTexture(GL_TEXTURE_2D, texture_id);
-            // Vincula o sampler uniform "diffuse_texture" à unidade de textura 0
             glUniform1i(g_diffuse_texture_sampler_uniform, 0);
-        }
-        else
-        {
-            // Diz ao shader que NÃO TEMOS uma textura, então ele deve usar apenas a cor
+        } else {
+            // Sem textura
             glUniform1i(g_has_texture_uniform, 0);
         }
 
-        // Envie parâmetros do material para o shader
-        glUniform3fv(g_material_Ka_uniform, 1, material.ambient);
-        glUniform3fv(g_material_Kd_uniform, 1, material.diffuse);
-        glUniform3fv(g_material_Ks_uniform, 1, material.specular);
-        glUniform1f(g_material_Ns_uniform, material.shininess);
-        glUniform1f(g_material_d_uniform, material.dissolve);
+        // Definição object_id
+        glUniform1i(g_object_id_uniform, object_id);
 
-        // Defina o object_id
-        glUniform1i(g_object_id_uniform, obj_num);
-
-        // Desenhe o shape
+        // Desenha o objeto usando função usa em objetos sem .mtl
         DrawVirtualObject(shape.name.c_str());
     }
 }
 
-// Função que carrega os shaders de vértices e de fragmentos que serão
-// utilizados para renderização. Veja slides 180-200 do documento Aula_03_Rendering_Pipeline_Grafico.pdf.
-//
+// Carrega arquivos de textura de cada objeto
+std::map<std::string, GLuint> GetTexturesFromMtl(ObjModel *object, std::string texture_path)
+{
+    std::map<std::string, GLuint> texture_name_to_id;
+
+    for (const auto &material : object->materials)
+    {
+        if (!material.diffuse_texname.empty() && texture_name_to_id.count(material.diffuse_texname) == 0)
+        {
+            std::string texpath = texture_path + material.diffuse_texname;
+            GLuint loaded_texture_id = LoadTextureImage(texpath.c_str(), 0);
+            texture_name_to_id[material.diffuse_texname] = loaded_texture_id;
+        }
+    }
+    return texture_name_to_id;
+}
+
+// Função que carrega os shaders de vértices e de fragmentos que serão utilizados para renderização
 void LoadShadersFromFiles()
 {
-    // Note que o caminho para os arquivos "shader_vertex.glsl" e
-    // "shader_fragment.glsl" estão fixados, sendo que assumimos a existência
-    // da seguinte estrutura no sistema de arquivos:
-    //
-    //    + FCG_Lab_01/
-    //    |
-    //    +--+ bin/
-    //    |  |
-    //    |  +--+ Release/  (ou Debug/ ou Linux/)
-    //    |     |
-    //    |     o-- main.exe
-    //    |
-    //    +--+ src/
-    //       |
-    //       o-- shader_vertex.glsl
-    //       |
-    //       o-- shader_fragment.glsl
-    //
+    
     GLuint vertex_shader_id = LoadShader_Vertex("../../src/shader_vertex.glsl");
     GLuint fragment_shader_id = LoadShader_Fragment("../../src/shader_fragment.glsl");
 
-    // Deletamos o programa de GPU anterior, caso ele exista.
+    // Deletamos o programa de GPU anterior, caso ele exista
     if (g_GpuProgramID != 0)
         glDeleteProgram(g_GpuProgramID);
 
     // Criamos um programa de GPU utilizando os shaders carregados acima.
     g_GpuProgramID = CreateGpuProgram(vertex_shader_id, fragment_shader_id);
 
-    // Buscamos o endereço das variáveis definidas dentro do Vertex Shader.
-    // Utilizaremos estas variáveis para enviar dados para a placa de vídeo
-    // (GPU)! Veja arquivo "shader_vertex.glsl" e "shader_fragment.glsl".
-    g_model_uniform = glGetUniformLocation(g_GpuProgramID, "model");           // Variável da matriz "model"
-    g_view_uniform = glGetUniformLocation(g_GpuProgramID, "view");             // Variável da matriz "view" em shader_vertex.glsl
-    g_projection_uniform = glGetUniformLocation(g_GpuProgramID, "projection"); // Variável da matriz "projection" em shader_vertex.glsl
-    g_object_id_uniform = glGetUniformLocation(g_GpuProgramID, "object_id");   // Variável "object_id" em shader_fragment.glsl
+    // Buscamos o endereço das variáveis definidas dentro do Vertex Shader
+    g_model_uniform = glGetUniformLocation(g_GpuProgramID, "model");           
+    g_view_uniform = glGetUniformLocation(g_GpuProgramID, "view");             
+    g_projection_uniform = glGetUniformLocation(g_GpuProgramID, "projection"); 
+    g_object_id_uniform = glGetUniformLocation(g_GpuProgramID, "object_id"); 
     g_bbox_min_uniform = glGetUniformLocation(g_GpuProgramID, "bbox_min");
     g_bbox_max_uniform = glGetUniformLocation(g_GpuProgramID, "bbox_max");
-
-    // NOVO: Inicialização dos novos uniforms
-    g_has_texture_uniform = glGetUniformLocation(g_GpuProgramID, "has_texture");
-    g_material_Ka_uniform = glGetUniformLocation(g_GpuProgramID, "material_Ka");
-    g_material_Kd_uniform = glGetUniformLocation(g_GpuProgramID, "material_Kd");
-    g_material_Ks_uniform = glGetUniformLocation(g_GpuProgramID, "material_Ks");
-    g_material_Ns_uniform = glGetUniformLocation(g_GpuProgramID, "material_Ns");
-    g_material_d_uniform = glGetUniformLocation(g_GpuProgramID, "material_d");
-    g_diffuse_texture_sampler_uniform = glGetUniformLocation(g_GpuProgramID, "diffuse_texture"); // Certifique-se de que o nome no shader é "diffuse_texture"
+    g_diffuse_texture_sampler_uniform = glGetUniformLocation(g_GpuProgramID, "diffuse_texture");
 }
 
 // Função que pega a matriz M e guarda a mesma no topo da pilha
@@ -1145,8 +1049,7 @@ void PopMatrix(glm::mat4 &M)
     }
 }
 
-// Função que computa as normais de um ObjModel, caso elas não tenham sido
-// especificadas dentro do arquivo ".obj"
+// Função que computa as normais de um ObjModel, caso elas não tenham sido especificadas dentro do arquivo ".obj"
 void ComputeNormals(ObjModel *model)
 {
     if (!model->attrib.normals.empty())
@@ -1208,24 +1111,7 @@ void ComputeNormals(ObjModel *model)
     }
 }
 
-// Carrega arquivos de textura de cada objeto
-std::map<std::string, GLuint> LoadTexturesFromObjModel(ObjModel *model, std::string base_path)
-{
-    std::map<std::string, GLuint> texture_name_to_id;
-
-    for (const auto &material : model->materials)
-    {
-        if (!material.diffuse_texname.empty() && texture_name_to_id.count(material.diffuse_texname) == 0)
-        {
-            std::string texpath = base_path + material.diffuse_texname;
-            GLuint loaded_texture_id = LoadTextureImage(texpath.c_str(), 0);
-            texture_name_to_id[material.diffuse_texname] = loaded_texture_id;
-        }
-    }
-    return texture_name_to_id;
-}
-
-// Constrói triângulos para futura renderização a partir de um ObjModel.
+// Constrói triângulos para futura renderização a partir de um ObjModel
 void BuildTrianglesAndAddToVirtualScene(ObjModel *model)
 {
     GLuint vertex_array_object_id;
@@ -1357,19 +1243,15 @@ void BuildTrianglesAndAddToVirtualScene(ObjModel *model)
     GLuint indices_id;
     glGenBuffers(1, &indices_id);
 
-    // "Ligamos" o buffer. Note que o tipo agora é GL_ELEMENT_ARRAY_BUFFER.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_id);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indices.size() * sizeof(GLuint), indices.data());
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // XXX Errado!
-    //
-
-    // "Desligamos" o VAO, evitando assim que operações posteriores venham a
-    // alterar o mesmo. Isso evita bugs.
+   
+    // "Desligamos" o VAO
     glBindVertexArray(0);
 }
 
-// Carrega um Vertex Shader de um arquivo GLSL. Veja definição de LoadShader() abaixo.
+// Carrega um Vertex Shader de um arquivo GLSL
 GLuint LoadShader_Vertex(const char *filename)
 {
     // Criamos um identificador (ID) para este shader, informando que o mesmo
@@ -1383,7 +1265,7 @@ GLuint LoadShader_Vertex(const char *filename)
     return vertex_shader_id;
 }
 
-// Carrega um Fragment Shader de um arquivo GLSL . Veja definição de LoadShader() abaixo.
+// Carrega um Fragment Shader de um arquivo GLSL
 GLuint LoadShader_Fragment(const char *filename)
 {
     // Criamos um identificador (ID) para este shader, informando que o mesmo
@@ -1397,8 +1279,7 @@ GLuint LoadShader_Fragment(const char *filename)
     return fragment_shader_id;
 }
 
-// Função auxilar, utilizada pelas duas funções acima. Carrega código de GPU de
-// um arquivo GLSL e faz sua compilação.
+// Função auxilar, utilizada pelas duas funções que carregam shaders
 void LoadShader(const char *filename, GLuint shader_id)
 {
     // Lemos o arquivo de texto indicado pela variável "filename"
@@ -1470,8 +1351,7 @@ void LoadShader(const char *filename, GLuint shader_id)
     delete[] log;
 }
 
-// Esta função cria um programa de GPU, o qual contém obrigatoriamente um
-// Vertex Shader e um Fragment Shader.
+// Esta função cria um programa de GPU, o qual contém obrigatoriamente um Vertex Shader e um Fragment Shader
 GLuint CreateGpuProgram(GLuint vertex_shader_id, GLuint fragment_shader_id)
 {
     // Criamos um identificador (ID) para este programa de GPU
@@ -1521,9 +1401,7 @@ GLuint CreateGpuProgram(GLuint vertex_shader_id, GLuint fragment_shader_id)
     return program_id;
 }
 
-// Definição da função que será chamada sempre que a janela do sistema
-// operacional for redimensionada, por consequência alterando o tamanho do
-// "framebuffer" (região de memória onde são armazenados os pixels da imagem).
+// Função caso janela seja redimensionada
 void FramebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
     // Indicamos que queremos renderizar em toda região do framebuffer. A
@@ -1542,9 +1420,7 @@ void FramebufferSizeCallback(GLFWwindow *window, int width, int height)
     g_ScreenRatio = (float)width / height;
 }
 
-// Variáveis globais que armazenam a última posição do cursor do mouse, para
-// que possamos calcular quanto que o mouse se movimentou entre dois instantes
-// de tempo. Utilizadas no callback CursorPosCallback() abaixo.
+// Variáveis globais que armazenam a última posição do cursor do mouse
 double g_LastCursorPosX, g_LastCursorPosY;
 
 // Função callback chamada sempre que o usuário aperta algum dos botões do mouse
@@ -1600,13 +1476,12 @@ void MouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
     }
 }
 
-// Função callback chamada sempre que o usuário movimentar o cursor do mouse em
-// cima da janela OpenGL.
+// Função callback chamada sempre que o usuário movimentar o cursor do mouse em cima da janela OpenGL
 void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
 {
     if (!useLookAt)
     {
-        // Lógica da Câmera Livre (mouse look)
+        // Usa câmera livre
         static float horizontal = -90.0f; 
         static float vertical = 0.0f;
         static float x_pos = 400.0f; 
@@ -1637,7 +1512,7 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
     }
     else
     {
-        // Lógica da Câmera Orbital (arrastar com o botão esquerdo)
+        //Usa câmera look at
         if (g_LeftMouseButtonPressed)
         {
             float dx = xpos - g_LastCursorPosX;
@@ -1662,7 +1537,7 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
     }
 }
 
-// Função callback chamada sempre que o usuário movimenta a "rodinha" do mouse.
+// Função callback chamada sempre que o usuário movimenta a "rodinha" do mouse
 void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset)
 {
     // Atualizamos a distância da câmera para a origem utilizando a
@@ -1679,8 +1554,7 @@ void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset)
         g_CameraDistance = verysmallnumber;
 }
 
-// Definição da função que será chamada sempre que o usuário pressionar alguma
-// tecla do teclado. Veja http://www.glfw.org/docs/latest/input_guide.html#input_key
+// Definição da função que será chamada sempre que o usuário pressionar alguma tecla do teclado
 void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
 {
     // ======================
@@ -1695,46 +1569,10 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
 
-    // O código abaixo implementa a seguinte lógica:
-    //   Se apertar tecla X       então g_AngleX += delta;
-    //   Se apertar tecla shift+X então g_AngleX -= delta;
-    //   Se apertar tecla Y       então g_AngleY += delta;
-    //   Se apertar tecla shift+Y então g_AngleY -= delta;
-    //   Se apertar tecla Z       então g_AngleZ += delta;
-    //   Se apertar tecla shift+Z então g_AngleZ -= delta;
-
-    float delta = 3.141592 / 16; // 22.5 graus, em radianos.
-
-    if (key == GLFW_KEY_X && action == GLFW_PRESS)
-    {
-        g_AngleX += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
-    }
-
-    if (key == GLFW_KEY_Y && action == GLFW_PRESS)
-    {
-        g_AngleY += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
-    }
-    if (key == GLFW_KEY_Z && action == GLFW_PRESS)
-    {
-        g_AngleZ += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
-    }
-
     bool is_player_asleep = false;
     if (key == GLFW_KEY_E && action == GLFW_PRESS)
     {
         is_e_pressed = true;
-    }
-
-    // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-    {
-        g_AngleX = 0.0f;
-        g_AngleY = 0.0f;
-        g_AngleZ = 0.0f;
-        g_ForearmAngleX = 0.0f;
-        g_ForearmAngleZ = 0.0f;
-        g_TorsoPositionX = 0.0f;
-        g_TorsoPositionY = 0.0f;
     }
 
     // Se o usuário apertar a tecla P, utilizamos projeção perspectiva.
@@ -1763,30 +1601,21 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
         fflush(stdout);
     }
 
+    // Se o usuário apertar a tecla c muda a câmera
     if (key == GLFW_KEY_C && action == GLFW_PRESS)
     {
         useLookAt = !useLookAt;
 
-       // Se acabamos de MUDAR PARA a câmera look-at (visão externa)
         if (useLookAt)
         {
-            // Redefinimos os parâmetros da câmera orbital para uma visão externa e elevada.
-            
-            // 1. Aumenta a DISTÂNCIA para ver a casa inteira de longe.
             g_CameraDistance = 60.0f; 
-            
-            // 2. Define um ÂNGULO DE ELEVAÇÃO (altura) para ver por cima. (1.0 radiano ~= 57 graus)
             g_CameraPhi = 0.5f;
-            
-            // 3. Define um ÂNGULO HORIZONTAL para ver a casa pela quina. (0.785 radiano = 45 graus)
             g_CameraTheta = 2.0f; 
 
-            // Habilita o cursor para a câmera orbital poder ser movida (se desejado)
-             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
-        else // Se acabamos de MUDAR PARA a câmera livre (visão interna)
+        else
         {
-            // Desabilita o cursor para o modo de primeira pessoa
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
         
@@ -1859,22 +1688,7 @@ void TextRendering_ShowModelViewProjection(
     TextRendering_PrintMatrixVectorProductMoreDigits(window, viewport_mapping, p_ndc, -1.0f, 1.0f - 26 * pad, 1.0f);
 }
 
-// Escrevemos na tela os ângulos de Euler definidos nas variáveis globais
-// g_AngleX, g_AngleY, e g_AngleZ.
-void TextRendering_ShowEulerAngles(GLFWwindow *window)
-{
-    if (!g_ShowInfoText)
-        return;
-
-    float pad = TextRendering_LineHeight(window);
-
-    char buffer[80];
-    snprintf(buffer, 80, "Euler Angles rotation matrix = Z(%.2f)*Y(%.2f)*X(%.2f)\n", g_AngleZ, g_AngleY, g_AngleX);
-
-    TextRendering_PrintString(window, buffer, -1.0f + pad / 10, -1.0f + 2 * pad / 10, 1.0f);
-}
-
-// Escrevemos na tela qual matriz de projeção está sendo utilizada.
+// Escreve na tela qual matriz de projeção está sendo utilizada.
 void TextRendering_ShowProjection(GLFWwindow *window)
 {
     if (!g_ShowInfoText)
@@ -1889,8 +1703,7 @@ void TextRendering_ShowProjection(GLFWwindow *window)
         TextRendering_PrintString(window, "Orthographic", 1.0f - 13 * charwidth, -1.0f + 2 * lineheight / 10, 1.0f);
 }
 
-// Escrevemos na tela o número de quadros renderizados por segundo (frames per
-// second).
+// Escreve na tela o número de quadros renderizados por segundo (frames persecond)
 void TextRendering_ShowFramesPerSecond(GLFWwindow *window)
 {
     if (!g_ShowInfoText)
@@ -1925,9 +1738,7 @@ void TextRendering_ShowFramesPerSecond(GLFWwindow *window)
     TextRendering_PrintString(window, buffer, 1.0f - (numchars + 1) * charwidth, 1.0f - lineheight, 1.0f);
 }
 
-// Função para debugging: imprime no terminal todas informações de um modelo
-// geométrico carregado de um arquivo ".obj".
-// Veja: https://github.com/syoyo/tinyobjloader/blob/22883def8db9ef1f3ffb9b404318e7dd25fdbb51/loader_example.cc#L98
+// Função para debugging: imprime no terminal todas informações de um modelo geométrico carregado de um arquivo ".obj".
 void PrintObjModelInfo(ObjModel *model)
 {
     const tinyobj::attrib_t &attrib = model->attrib;
