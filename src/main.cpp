@@ -208,7 +208,7 @@ float last_time = 0.0f;
 float time_diff = 0.0f;
 
 // Velocidade Player
-float normal_speed = 10.5f;
+float normal_speed = 13.5f;
 float run_speed = 15.5f;
 
 // Texturas
@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
     player.front_vector = glm::vec3(0.0f, 0.0f, -1.0f);
     player.up_vector = glm::vec3(0.0f, 1.0f, 0.0f);
     player.local_collider = {
-        glm::vec3(-0.3f, -1.0f, -0.3f), // min
+        glm::vec3(-0.3f, -8.0f, -0.3f), // min
         glm::vec3(0.3f, 0.8f, 0.3f)     // max
     };
 
