@@ -33,4 +33,4 @@ bool RayIntersectsSphere(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
 bool RayIntersectsAABB(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
                        const AABB &box, float &t_out);
 
-string CheckRaycastFromCenter(const Player &player, const std::vector<CollidableObject> &objects);
+std::string CheckRaycastFromCenter(const Player &player, std::vector<CollidableObject> &objects, bool &is_player_asleep);

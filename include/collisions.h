@@ -44,6 +44,7 @@ struct CollidableObject
     Plane plane;
     std::string text;
     bool is_interactive;
+    std::string interactive_text;
 };
 
 bool CheckPointSphereCollision(glm::vec3 point, const Sphere &sphere);

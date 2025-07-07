@@ -250,40 +250,63 @@ bool RayIntersectsAABB(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
     return true;
 };
 
-string CheckRaycastFromCenter(const Player &player, const std::vector<CollidableObject> &objects)
+std::string CheckRaycastFromCenter(const Player &player, std::vector<CollidableObject> &objects, bool &is_player_asleep)
 {
     float closest_distance = std::numeric_limits<float>::max();
-    const CollidableObject *hit_object = nullptr;
+    int closest_index = -1;
 
-    for (const auto &obj : objects)
+    for (size_t i = 0; i < objects.size(); ++i)
     {
         float t = 0.0f;
         bool hit = false;
 
-        if (obj.shape_type == ShapeType::SHAPE_PLANE)
+        if (objects[i].shape_type == ShapeType::SHAPE_PLANE)
         {
-            hit = RayIntersectsPlane(player.position, player.front_vector, obj.plane, t);
+            hit = RayIntersectsPlane(player.position, player.front_vector, objects[i].plane, t);
         }
-        else if (obj.shape_type == ShapeType::SHAPE_AABB)
+        else if (objects[i].shape_type == ShapeType::SHAPE_AABB)
         {
-            hit = RayIntersectsAABB(player.position, player.front_vector, obj.aabb, t);
+            hit = RayIntersectsAABB(player.position, player.front_vector, objects[i].aabb, t);
         }
-        else if (obj.shape_type == ShapeType::SHAPE_SPHERE)
+        else if (objects[i].shape_type == ShapeType::SHAPE_SPHERE)
         {
-            hit = RayIntersectsSphere(player.position, player.front_vector, obj.sphere, t);
+            hit = RayIntersectsSphere(player.position, player.front_vector, objects[i].sphere, t);
         }
 
         if (hit && t < closest_distance)
         {
             closest_distance = t;
-            hit_object = &obj;
+            closest_index = static_cast<int>(i);
         }
     }
 
-    if (hit_object)
+    if (closest_index != -1 && objects[closest_index].is_interactive)
     {
-        cout << hit_object->text << endl;
-        return hit_object->text;
+        CollidableObject &obj = objects[closest_index];
+        obj.is_interactive = false;
+
+        std::cout << obj.text << std::endl;
+
+        if (obj.text == "cama")
+        {
+            is_player_asleep = true;
+            obj.is_interactive = false;
+
+            // Se ainda tem objetos que deveriam ter sido desativados
+            for (size_t i = 0; i < objects.size(); ++i)
+            {
+                if (i != closest_index && objects[i].is_interactive && objects[i].text != "cama")
+                {
+                    return "Voce morreu!" + objects[i].text;
+                }
+            }
+
+            // senao, significa que terminamos o jogo
+            return "Voce dorme tranquilamente!";
+        }
+
+        return obj.text;
     }
+
     return "";
 }

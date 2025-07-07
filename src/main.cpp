@@ -240,8 +240,6 @@ glm::vec3 bezier_p1 = glm::vec3(0.75f, 0.0f, 1.5f);
 glm::vec3 bezier_p2 = glm::vec3(-0.75f, 0.0f, 1.5f);
 glm::vec3 bezier_p3 = glm::vec3(-1.5f, 0.0f, 0.0f);
 
-std::vector<CollidableObject> scene_collidables;
-
 // Controles do comportamento durante a curva
 float bezier_t = 0.0f;
 float bezier_speed = 0.15f;
@@ -251,6 +249,10 @@ int bezier_direction = 1;
 GLuint g_NumLoadedTextures = 0;
 GLuint g_CrosshairShaderID = 0;
 GLuint g_CrosshairVao = 0;
+
+std::string interactive_text = "";
+float interactive_timer = 0.0f;
+bool is_e_pressed = false;
 
 // MAIN
 
@@ -446,6 +448,163 @@ int main(int argc, char *argv[])
 
     glBindVertexArray(0); // Desvincula para segurança
 
+    std::vector<CollidableObject> scene_collidables;
+
+    // Matriz ROOM
+    float room_scale1 = 20.0f;
+    float room_scale2 = 15.0f;
+    glm::vec3 room_position = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::mat4 room_model_matrix = Matrix_Translate(room_position.x, room_position.y, room_position.z) * Matrix_Scale(room_scale1, room_scale2, room_scale1);
+
+    float zmin = -20;
+    float zmax = 20;
+    float xmin = 20;
+    float xmax = -20;
+
+    CollidableObject parede_fundo;
+    parede_fundo.shape_type = ShapeType::SHAPE_PLANE;
+    parede_fundo.plane = {glm::vec3(0.0f, 0.0f, +1.0f), -zmin};
+    parede_fundo.text = "";
+    parede_fundo.is_interactive = false;
+
+    CollidableObject parede_frente;
+    parede_frente.shape_type = ShapeType::SHAPE_PLANE;
+    parede_frente.plane = {glm::vec3(0.0f, 0.0f, -1.0f), zmax};
+    parede_frente.text = "";
+    parede_frente.is_interactive = false;
+
+    CollidableObject parede_esquerda;
+    parede_esquerda.shape_type = ShapeType::SHAPE_PLANE;
+    parede_esquerda.plane = {glm::vec3(+1.0f, 0.0f, 0.0f), -xmin};
+    parede_esquerda.text = "";
+    parede_esquerda.is_interactive = false;
+
+    CollidableObject parede_direita;
+    parede_direita.shape_type = ShapeType::SHAPE_PLANE;
+    parede_direita.plane = {glm::vec3(-1.0f, 0.0f, 0.0f), xmax};
+    parede_direita.text = "";
+    parede_direita.is_interactive = false;
+
+    scene_collidables.push_back(parede_fundo);
+    scene_collidables.push_back(parede_frente);
+    scene_collidables.push_back(parede_esquerda);
+    scene_collidables.push_back(parede_direita);
+
+    // Matriz FLOOR
+    float floor_scale = 30.0f;
+    glm::vec3 floor_position = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::mat4 floor_model_matrix = Matrix_Translate(0.0f, -9.0f, 0.0f) * Matrix_Scale(floor_scale, floor_scale, floor_scale);
+
+    float floor_y = -9.0f + floor_scale;
+
+    CollidableObject floor;
+    floor.shape_type = ShapeType::SHAPE_PLANE;
+    floor.plane = {glm::vec3(0.0f, 1.0f, 0.0f), -floor_y};
+    floor.text = "";
+    floor.is_interactive = false;
+    scene_collidables.push_back(floor);
+
+    // Matriz BED
+    float bed_scale = 5.0f;
+    glm::vec3 bed_position = glm::vec3(-13.0f, -6.0f, 15.0f);
+    glm::mat4 bed_model_matrix = Matrix_Translate(bed_position.x, bed_position.y, bed_position.z) * Matrix_Scale(bed_scale, bed_scale, bed_scale);
+
+    CollidableObject bed;
+    bed.shape_type = ShapeType::SHAPE_AABB;
+    bed.aabb.min = glm::vec3(-20.10f, -8.0f, 8.750f);
+    bed.aabb.max = glm::vec3(-6.49f, 3.0f, 19.62f);
+    bed.text = "cama";
+    bed.is_interactive = true;
+    scene_collidables.push_back(bed);
+
+    // Matriz STOVE
+    float stove_scale = 2.0f;
+    glm::vec3 stove_position = glm::vec3(18.0f, -6.5f, -17.0f);
+    glm::mat4 stove_model_matrix = Matrix_Translate(stove_position.x, stove_position.y, stove_position.z) * Matrix_Scale(stove_scale, stove_scale, stove_scale);
+
+    CollidableObject stove;
+    stove.shape_type = ShapeType::SHAPE_AABB;
+    stove.aabb.min = glm::vec3(15.11f, -5.0f, -19.35f);
+    stove.aabb.max = glm::vec3(19.5f, 5.0f, -13.61f);
+    stove.text = "Voce desligou o fogao";
+    stove.is_interactive = true;
+    scene_collidables.push_back(stove);
+
+    // Matriz SOFA
+    float sofa_scale = 5.0f;
+    glm::vec3 sofa_position = glm::vec3(12.0f, -6.5f, 5.0f);
+    glm::mat4 sofa_model_matrix = Matrix_Translate(sofa_position.x, sofa_position.y, sofa_position.z) * Matrix_Scale(sofa_scale, sofa_scale, sofa_scale) * Matrix_Rotate_Y(1.55f);
+
+    CollidableObject sofa;
+    sofa.shape_type = ShapeType::SHAPE_AABB;
+    sofa.aabb.min = glm::vec3(5.4f, -5.0f, 1.63f);
+    sofa.aabb.max = glm::vec3(17.94f, 5.0f, 7.78f);
+    sofa.text = "";
+    sofa.is_interactive = false;
+    scene_collidables.push_back(sofa);
+
+    // Matriz DOOR
+    float door_scale = 5.5f;
+    glm::vec3 door_position = glm::vec3(-21.0f, -4.0f, -15.0f);
+    glm::mat4 door_model_matrix = Matrix_Translate(door_position.x, door_position.y, door_position.z) * Matrix_Scale(door_scale, door_scale, door_scale) * Matrix_Rotate_Y(3.15f);
+
+    CollidableObject door;
+    door.shape_type = ShapeType::SHAPE_AABB;
+    door.aabb.min = glm::vec3(-19.0f, -5.0f, -18.0f);
+    door.aabb.max = glm::vec3(-19.0f, 5.0f, -12.0f);
+    door.text = "Voce trancou a porta";
+    door.is_interactive = true;
+    scene_collidables.push_back(door);
+
+    // Matriz CABINET1
+    float cabinet1_scale = 2.5f;
+    glm::vec3 cabinet1_position = glm::vec3(12.0f, -6.5f, 18.0f);
+    glm::mat4 cabinet1_model_matrix = Matrix_Translate(cabinet1_position.x, cabinet1_position.y, cabinet1_position.z) * Matrix_Scale(cabinet1_scale, cabinet1_scale, cabinet1_scale) * Matrix_Rotate_Y(-1.60f);
+
+    // Matriz TV
+    float tv_scale = 1.2f;
+    glm::vec3 tv_position = glm::vec3(12.0f, -2.8f, 18.5f);
+    glm::mat4 tv_model_matrix = Matrix_Translate(tv_position.x, tv_position.y, tv_position.z) * Matrix_Scale(tv_scale, tv_scale, tv_scale) * Matrix_Rotate_Y(-1.60f);
+
+    CollidableObject tv;
+    tv.shape_type = ShapeType::SHAPE_AABB;
+    tv.aabb.min = glm::vec3(9.5f, -5.0f, 15.4f);
+    tv.aabb.max = glm::vec3(14.5f, 5.0f, 19.6f);
+    tv.text = "";
+    tv.is_interactive = false;
+    scene_collidables.push_back(tv);
+
+    // Matriz RADIATOR
+    float radiator_scale = 2.0f;
+    glm::vec3 radiator_position = glm::vec3(-20.0f, -7.0f, 5.0f);
+    glm::mat4 radiator_model_matrix = Matrix_Translate(radiator_position.x, radiator_position.y, radiator_position.z) * Matrix_Scale(radiator_scale, radiator_scale, radiator_scale) * Matrix_Rotate_Y(-1.60f);
+
+    CollidableObject radiator;
+    radiator.shape_type = ShapeType::SHAPE_AABB;
+    radiator.aabb.min = glm::vec3(-19.7f, -5.0f, 1.5f);
+    radiator.aabb.max = glm::vec3(-18.0f, 5.0f, 7.0f);
+    radiator.text = "Voce desligou o radiador";
+    radiator.is_interactive = true;
+    scene_collidables.push_back(radiator);
+
+    // Matriz RAT
+    float rat_scale = 1.2f;
+    glm::vec3 rat_position = glm::vec3(4.0f, -4.5f, -3.0f);
+    glm::mat4 rat_model_matrix = Matrix_Translate(rat_position.x, rat_position.y, rat_position.z) * Matrix_Scale(rat_scale, rat_scale, rat_scale) * Matrix_Rotate_Y(-1.4f);
+
+    // Matriz TABLE
+    float table_scale = 3.5f;
+    glm::vec3 table_position = glm::vec3(4.0f, -7.5f, -4.0f);
+    glm::mat4 table_model_matrix = Matrix_Translate(table_position.x, table_position.y, table_position.z) * Matrix_Scale(table_scale, table_scale, table_scale) * Matrix_Rotate_Y(-0.0f);
+
+    CollidableObject table;
+    table.shape_type = ShapeType::SHAPE_AABB;
+    table.aabb.min = glm::vec3(0.6f, -5.0f, -9.0f);
+    table.aabb.max = glm::vec3(6.8f, 5.0f, 0.3f);
+    table.text = "Uma mesa com um rato em cima.";
+    table.is_interactive = true;
+    scene_collidables.push_back(table);
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -462,161 +621,6 @@ int main(int argc, char *argv[])
         // e também resetamos todos os pixels do Z-buffer (depth buffer).
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Matriz ROOM
-        float room_scale1 = 20.0f;
-        float room_scale2 = 15.0f;
-        glm::vec3 room_position = glm::vec3(0.0f, 0.0f, 0.0f);
-        glm::mat4 room_model_matrix = Matrix_Translate(room_position.x, room_position.y, room_position.z) * Matrix_Scale(room_scale1, room_scale2, room_scale1);
-
-        float zmin = -20;
-        float zmax = 20;
-        float xmin = 20;
-        float xmax = -20;
-
-        CollidableObject parede_fundo;
-        parede_fundo.shape_type = ShapeType::SHAPE_PLANE;
-        parede_fundo.plane = {glm::vec3(0.0f, 0.0f, +1.0f), -zmin};
-        parede_fundo.text = "É só a parede dos fundos da casa.";
-        parede_fundo.is_interactive = false;
-
-        CollidableObject parede_frente;
-        parede_frente.shape_type = ShapeType::SHAPE_PLANE;
-        parede_frente.plane = {glm::vec3(0.0f, 0.0f, -1.0f), zmax};
-        parede_frente.text = "É só a parede da frente da casa.";
-        parede_frente.is_interactive = false;
-
-        CollidableObject parede_esquerda;
-        parede_esquerda.shape_type = ShapeType::SHAPE_PLANE;
-        parede_esquerda.plane = {glm::vec3(+1.0f, 0.0f, 0.0f), -xmin};
-        parede_esquerda.text = "É só a parede esquerda da casa.";
-        parede_esquerda.is_interactive = false;
-
-        CollidableObject parede_direita;
-        parede_direita.shape_type = ShapeType::SHAPE_PLANE;
-        parede_direita.plane = {glm::vec3(-1.0f, 0.0f, 0.0f), xmax};
-        parede_direita.text = "É só a parede direita da casa.";
-        parede_direita.is_interactive = false;
-
-        scene_collidables.push_back(parede_fundo);
-        scene_collidables.push_back(parede_frente);
-        scene_collidables.push_back(parede_esquerda);
-        scene_collidables.push_back(parede_direita);
-
-        // Matriz FLOOR
-        float floor_scale = 30.0f;
-        glm::vec3 floor_position = glm::vec3(0.0f, 0.0f, 0.0f);
-        glm::mat4 floor_model_matrix = Matrix_Translate(0.0f, -9.0f, 0.0f) * Matrix_Scale(floor_scale, floor_scale, floor_scale);
-
-        float floor_y = -9.0f + floor_scale;
-
-        CollidableObject floor;
-        floor.shape_type = ShapeType::SHAPE_PLANE;
-        floor.plane = {glm::vec3(0.0f, 1.0f, 0.0f), -floor_y};
-        floor.text = "É só um chão.";
-        floor.is_interactive = false;
-        scene_collidables.push_back(floor);
-
-        // Matriz BED
-        float bed_scale = 5.0f;
-        glm::vec3 bed_position = glm::vec3(-13.0f, -6.0f, 15.0f);
-        glm::mat4 bed_model_matrix = Matrix_Translate(bed_position.x, bed_position.y, bed_position.z) * Matrix_Scale(bed_scale, bed_scale, bed_scale);
-
-        CollidableObject bed;
-        bed.shape_type = ShapeType::SHAPE_AABB;
-        bed.aabb.min = glm::vec3(-20.10f, -8.0f, 8.750f);
-        bed.aabb.max = glm::vec3(-6.49f, 3.0f, 19.62f);
-        bed.text = "É uma cama bem confortável.";
-        bed.is_interactive = true;
-        scene_collidables.push_back(bed);
-
-        // Matriz STOVE
-        float stove_scale = 2.0f;
-        glm::vec3 stove_position = glm::vec3(18.0f, -6.5f, -17.0f);
-        glm::mat4 stove_model_matrix = Matrix_Translate(stove_position.x, stove_position.y, stove_position.z) * Matrix_Scale(stove_scale, stove_scale, stove_scale);
-
-        CollidableObject stove;
-        stove.shape_type = ShapeType::SHAPE_AABB;
-        stove.aabb.min = glm::vec3(15.11f, -5.0f, -19.35f);
-        stove.aabb.max = glm::vec3(19.5f, 5.0f, -13.61f);
-        stove.text = "É um fogão.";
-        stove.is_interactive = true;
-        scene_collidables.push_back(stove);
-
-        // Matriz SOFA
-        float sofa_scale = 5.0f;
-        glm::vec3 sofa_position = glm::vec3(12.0f, -6.5f, 5.0f);
-        glm::mat4 sofa_model_matrix = Matrix_Translate(sofa_position.x, sofa_position.y, sofa_position.z) * Matrix_Scale(sofa_scale, sofa_scale, sofa_scale) * Matrix_Rotate_Y(1.55f);
-
-        CollidableObject sofa;
-        sofa.shape_type = ShapeType::SHAPE_AABB;
-        sofa.aabb.min = glm::vec3(5.4f, -5.0f, 1.63f);
-        sofa.aabb.max = glm::vec3(17.94f, 5.0f, 7.78f);
-        sofa.text = "É um sofá empoeirado.";
-        sofa.is_interactive = true;
-        scene_collidables.push_back(sofa);
-
-        // Matriz DOOR
-        float door_scale = 5.5f;
-        glm::vec3 door_position = glm::vec3(-21.0f, -4.0f, -15.0f);
-        glm::mat4 door_model_matrix = Matrix_Translate(door_position.x, door_position.y, door_position.z) * Matrix_Scale(door_scale, door_scale, door_scale) * Matrix_Rotate_Y(3.15f);
-
-        CollidableObject door;
-        door.shape_type = ShapeType::SHAPE_AABB;
-        door.aabb.min = glm::vec3(-19.0f, -5.0f, -18.0f);
-        door.aabb.max = glm::vec3(-19.0f, 5.0f, -12.0f);
-        door.text = "É uma porta destrancada.";
-        door.is_interactive = true;
-        scene_collidables.push_back(door);
-
-        // Matriz CABINET1
-        float cabinet1_scale = 2.5f;
-        glm::vec3 cabinet1_position = glm::vec3(12.0f, -6.5f, 18.0f);
-        glm::mat4 cabinet1_model_matrix = Matrix_Translate(cabinet1_position.x, cabinet1_position.y, cabinet1_position.z) * Matrix_Scale(cabinet1_scale, cabinet1_scale, cabinet1_scale) * Matrix_Rotate_Y(-1.60f);
-
-        // Matriz TV
-        float tv_scale = 1.2f;
-        glm::vec3 tv_position = glm::vec3(12.0f, -2.8f, 18.5f);
-        glm::mat4 tv_model_matrix = Matrix_Translate(tv_position.x, tv_position.y, tv_position.z) * Matrix_Scale(tv_scale, tv_scale, tv_scale) * Matrix_Rotate_Y(-1.60f);
-
-        CollidableObject tv;
-        tv.shape_type = ShapeType::SHAPE_AABB;
-        tv.aabb.min = glm::vec3(9.5f, -5.0f, 15.4f);
-        tv.aabb.max = glm::vec3(14.5f, 5.0f, 19.6f);
-        tv.text = "É uma TV desligada.";
-        tv.is_interactive = false;
-        scene_collidables.push_back(tv);
-
-        // Matriz RADIATOR
-        float radiator_scale = 2.0f;
-        glm::vec3 radiator_position = glm::vec3(-20.0f, -7.0f, 5.0f);
-        glm::mat4 radiator_model_matrix = Matrix_Translate(radiator_position.x, radiator_position.y, radiator_position.z) * Matrix_Scale(radiator_scale, radiator_scale, radiator_scale) * Matrix_Rotate_Y(-1.60f);
-
-        CollidableObject radiator;
-        radiator.shape_type = ShapeType::SHAPE_AABB;
-        radiator.aabb.min = glm::vec3(-19.7f, -5.0f, 1.5f);
-        radiator.aabb.max = glm::vec3(-18.0f, 5.0f, 7.0f);
-        radiator.text = "É um radiador ligado.";
-        radiator.is_interactive = true;
-        scene_collidables.push_back(radiator);
-
-        // Matriz RAT
-        float rat_scale = 1.2f;
-        glm::vec3 rat_position = glm::vec3(4.0f, -4.5f, -3.0f);
-        glm::mat4 rat_model_matrix = Matrix_Translate(rat_position.x, rat_position.y, rat_position.z) * Matrix_Scale(rat_scale, rat_scale, rat_scale) * Matrix_Rotate_Y(-1.4f);
-
-        // Matriz TABLE
-        float table_scale = 3.5f;
-        glm::vec3 table_position = glm::vec3(4.0f, -7.5f, -4.0f);
-        glm::mat4 table_model_matrix = Matrix_Translate(table_position.x, table_position.y, table_position.z) * Matrix_Scale(table_scale, table_scale, table_scale) * Matrix_Rotate_Y(-0.0f);
-
-        CollidableObject table;
-        table.shape_type = ShapeType::SHAPE_AABB;
-        table.aabb.min = glm::vec3(0.6f, -5.0f, -9.0f);
-        table.aabb.max = glm::vec3(6.8f, 5.0f, 0.3f);
-        table.text = "É uma mesa com um rato em cima.";
-        table.is_interactive = true;
-        scene_collidables.push_back(table);
-
         glUseProgram(g_GpuProgramID);
 
         UpdatePlayerPosition(window, time_diff, player, scene_collidables);
@@ -625,6 +629,18 @@ int main(int argc, char *argv[])
                player.position.x, player.position.y, player.position.z);
         fflush(stdout); // Força a impressão imediata no terminal
 
+        if (is_e_pressed)
+        {
+            bool is_player_asleep = false;
+            std::string result_text = CheckRaycastFromCenter(player, scene_collidables, is_player_asleep);
+
+            if (!result_text.empty())
+            {
+                interactive_text = result_text;
+                interactive_timer = 2.0f;
+            }
+            is_e_pressed = false;
+        }
         // Câmera livre
         glm::vec4 camera_position_c = glm::vec4(player.position, 1.0f);
         glm::vec4 camera_view_vector = glm::vec4(player.front_vector, 0.0f);
@@ -730,6 +746,13 @@ int main(int argc, char *argv[])
         TextRendering_ShowFramesPerSecond(window);
 
         glDisable(GL_DEPTH_TEST); // Para o crosshair ficar sempre por cima
+
+        if (interactive_timer > 0.0f)
+        {
+            interactive_timer -= time_diff;
+            float x = -0.5f * interactive_text.length() * 0.05f;
+            TextRendering_PrintString(window, interactive_text, x, -0.8f, 3.0f);
+        }
 
         glUseProgram(g_CrosshairShaderID); // Ativa o shader do crosshair
         glBindVertexArray(g_CrosshairVao); // Ativa o objeto do crosshair
@@ -1533,13 +1556,10 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
         g_AngleZ += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
     }
 
+    bool is_player_asleep = false;
     if (key == GLFW_KEY_E && action == GLFW_PRESS)
     {
-        string screen_text_obj = CheckRaycastFromCenter(player, scene_collidables);
-        if (screen_text_obj != "")
-        {
-            TextRendering_PrintString(window, screen_text_obj, -0.6f, 0.0f, 1.0f);
-        }
+        is_e_pressed = true;
     }
 
     // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.
