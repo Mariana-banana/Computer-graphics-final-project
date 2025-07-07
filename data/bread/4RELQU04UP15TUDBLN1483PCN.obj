@@ -17258,9 +17258,9 @@ vt 0.696818 0.307987
 # num_vertices: 8627
 
 
-g Object_TexMap_0
+g Object_TexMap4_0
 
-usemtl TexMap
+usemtl TexMap4
 
 f 1/1 2/2 3/3
 f 2/2 4/4 3/3
@@ -34203,9 +34203,9 @@ f 8212/8212 8214/8214 8627/8627
 f 8214/8214 8222/8222 8627/8627
 f 8627/8627 8222/8222 8617/8617
 
-g Object_TexMap_1
+g Object_TexMap4_1
 
-usemtl TexMap
+usemtl TexMap4
 
 f 1222/1222 1220/1220 1285/1285
 f 5315/5315 5316/5316 5322/5322

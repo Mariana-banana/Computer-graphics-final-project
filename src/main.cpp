@@ -153,6 +153,8 @@ void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 
 // VARIÁVEIS GLOBAIS
 
+bool useLookAt = false;
+
 // A cena virtual é uma lista de objetos nomeados, guardados em um dicionário
 // (map).  Veja dentro da função BuildTrianglesAndAddToVirtualScene() como que são incluídos
 // objetos dentro da variável g_VirtualScene, e veja na função main() como
@@ -381,6 +383,31 @@ int main(int argc, char *argv[])
     BuildTrianglesAndAddToVirtualScene(&tablemodel);
     std::map<std::string, GLuint> table_textures = LoadTexturesFromObjModel(&tablemodel, "../../data/table/");
 
+    ObjModel breadmodel("../../data/bread/4RELQU04UP15TUDBLN1483PCN.obj");
+    ComputeNormals(&breadmodel);
+    BuildTrianglesAndAddToVirtualScene(&breadmodel);
+    std::map<std::string, GLuint> bread_textures = LoadTexturesFromObjModel(&breadmodel, "../../data/bread/");
+    
+    ObjModel refrigeratormodel("../../data/refrigerator/92F62XNUJIV58FF7HGW9TYE8B.obj");
+    ComputeNormals(&refrigeratormodel);
+    BuildTrianglesAndAddToVirtualScene(&refrigeratormodel);
+    std::map<std::string, GLuint> refrigerator_textures = LoadTexturesFromObjModel(&refrigeratormodel, "../../data/refrigerator/");
+    
+    ObjModel sinkmodel("../../data/sink/7W8YGL7KDOLC069L6W1MQOY9V.obj");
+    ComputeNormals(&sinkmodel);
+    BuildTrianglesAndAddToVirtualScene(&sinkmodel);
+    std::map<std::string, GLuint> sink_textures = LoadTexturesFromObjModel(&sinkmodel, "../../data/sink/");
+    
+    ObjModel remotemodel("../../data/remote/2T1VFORH5Q21VLSM8ALF91TAA.obj");
+    ComputeNormals(&remotemodel);
+    BuildTrianglesAndAddToVirtualScene(&remotemodel);
+    std::map<std::string, GLuint> remote_textures = LoadTexturesFromObjModel(&remotemodel, "../../data/remote/");
+
+    ObjModel fanmodel("../../data/fan/V0TORHEAQ151GVFM0YPMY8H13.obj");
+    ComputeNormals(&fanmodel);
+    BuildTrianglesAndAddToVirtualScene(&fanmodel);
+    std::map<std::string, GLuint> fan_textures = LoadTexturesFromObjModel(&fanmodel, "../../data/fan/");
+
     if (argc > 1)
     {
         ObjModel model(argv[1]);
@@ -483,7 +510,7 @@ int main(int argc, char *argv[])
     scene_collidables.push_back(parede_direita);
 
     // Matriz FLOOR
-    float floor_scale = 30.0f;
+    float floor_scale = 100.0f;
     glm::vec3 floor_position = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::mat4 floor_model_matrix = Matrix_Translate(0.0f, -9.0f, 0.0f) * Matrix_Scale(floor_scale, floor_scale, floor_scale);
 
@@ -600,6 +627,55 @@ int main(int argc, char *argv[])
     rat_placeholder.is_interactive = true;
     scene_collidables.push_back(rat_placeholder);
 
+    // Matriz BREAD
+        float bread_scale = 0.5f;
+        glm::vec3 bread_position = glm::vec3(4.0f, -4.5f, -5.0f);
+        glm::mat4 bread_model_matrix = Matrix_Translate(bread_position.x, bread_position.y, bread_position.z) * Matrix_Scale(bread_scale, bread_scale, bread_scale) * Matrix_Rotate_Y(0.60f);
+
+        // Matriz REFRIGERATOR
+        float refrigerator_scale = 4.0f;
+        glm::vec3 refrigerator_position = glm::vec3(17.5f, -4.0f, -5.5f);
+        glm::mat4 refrigerator_model_matrix = Matrix_Translate(refrigerator_position.x, refrigerator_position.y, refrigerator_position.z) * Matrix_Scale(refrigerator_scale, refrigerator_scale, refrigerator_scale) * Matrix_Rotate_Y(0.0f);
+
+        CollidableObject refrigerator;
+        refrigerator.shape_type = ShapeType::SHAPE_AABB;
+        refrigerator.aabb.min = glm::vec3(13.58f, -5.0f, -8.2f);
+        refrigerator.aabb.max = glm::vec3(19.37f, 5.0f, -1.99f);
+        refrigerator.text = "";
+        refrigerator.is_interactive = false;
+        scene_collidables.push_back(refrigerator);
+
+        // Matriz SINK
+        float sink_scale = 2.5f;
+        glm::vec3 sink_position = glm::vec3(17.0f, -5.5f, -12.0f);
+        glm::mat4 sink_model_matrix = Matrix_Translate(sink_position.x, sink_position.y, sink_position.z) * Matrix_Scale(sink_scale, sink_scale, sink_scale) * Matrix_Rotate_Y(0.0f);
+
+        CollidableObject sink;
+        sink.shape_type = ShapeType::SHAPE_AABB;
+        sink.aabb.min = glm::vec3(14.5f, -5.0f, -14.4f);
+        sink.aabb.max = glm::vec3(19.65f, 5.0f, -8.6f);
+        sink.text = "";
+        sink.is_interactive = false;
+        scene_collidables.push_back(sink);
+
+        // Matriz REMOTE
+        float remote_scale = 0.6f;
+        glm::vec3 remote_position = glm::vec3(-20.3f, -2.0f, -11.0f);
+        glm::mat4 remote_model_matrix = Matrix_Translate(remote_position.x, remote_position.y, remote_position.z) * Matrix_Scale(remote_scale, remote_scale, remote_scale) * Matrix_Rotate_Y(-1.60f) * Matrix_Rotate_X(-1.58f);
+
+        CollidableObject remote;
+        remote.shape_type = ShapeType::SHAPE_AABB;
+        remote.aabb.min = glm::vec3(-22.67f, -5.0f, -14.7f);
+        remote.aabb.max = glm::vec3(-16.62f, 5.0f, -09.79f);
+        remote.text = "Voce desligou o ventilador";
+        remote.is_interactive = true;
+        scene_collidables.push_back(remote);
+
+        // Matriz FAN
+        float fan_scale = 3.0f;
+        glm::vec3 fan_position = glm::vec3(-10.0f, 6.0f, 10.0f);
+        glm::mat4 fan_model_matrix = Matrix_Translate(fan_position.x, fan_position.y, fan_position.z) * Matrix_Scale(fan_scale, fan_scale, fan_scale);
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -610,7 +686,7 @@ int main(int argc, char *argv[])
         time_diff = current_time - last_time;
         last_time = current_time;
 
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClearColor(0.05f, 0.05f, 0.15f, 1.0f);
 
         // "Pintamos" todos os pixels do framebuffer com a cor definida acima,
         // e também resetamos todos os pixels do Z-buffer (depth buffer).
@@ -632,30 +708,50 @@ int main(int argc, char *argv[])
             }
         }
 
-        UpdatePlayerPosition(window, time_diff, player, scene_collidables);
+        glm::mat4 view; // Declarada fora do if/else
 
-        if (is_e_pressed)
+        if (!useLookAt)
         {
-            bool is_player_asleep = false;
-            std::string result_text = CheckRaycastFromCenter(player, scene_collidables, is_player_asleep);
+            // Executa a lógica de movimento e cálculo da view para a Câmera Livre
+            UpdatePlayerPosition(window, time_diff, player, scene_collidables);
 
-            if (!result_text.empty())
+             if (is_e_pressed)
             {
-                interactive_text = result_text;
-                interactive_timer = 2.0f;
+                bool is_player_asleep = false;
+                std::string result_text = CheckRaycastFromCenter(player, scene_collidables, is_player_asleep);
+
+                if (!result_text.empty())
+                {
+                    interactive_text = result_text;
+                    interactive_timer = 2.0f;
+                }
+
+                if (interactive_text == "Voce se livrou do rato")
+                {
+                    is_rat_active = false;
+                }
+                is_e_pressed = false;
             }
 
-            if (interactive_text == "Voce se livrou do rato")
-            {
-                is_rat_active = false;
-            }
-            is_e_pressed = false;
+            glm::vec4 camera_position_c = glm::vec4(player.position, 1.0f);
+            glm::vec4 camera_view_vector = glm::vec4(player.front_vector, 0.0f);
+            glm::vec4 camera_up_vector = glm::vec4(player.up_vector, 0.0f);
+            view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
         }
-        // Câmera livre
-        glm::vec4 camera_position_c = glm::vec4(player.position, 1.0f);
-        glm::vec4 camera_view_vector = glm::vec4(player.front_vector, 0.0f);
-        glm::vec4 camera_up_vector = glm::vec4(player.up_vector, 0.0f);
-        glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
+        else
+        {
+            // Calcula a view para a Câmera Orbital (LookAt)
+            float r = g_CameraDistance;
+            float y = r * sin(g_CameraPhi);
+            float z = r * cos(g_CameraPhi) * cos(g_CameraTheta);
+            float x = r * cos(g_CameraPhi) * sin(g_CameraTheta);
+
+            glm::vec4 camera_position_c = glm::vec4(x, y, z, 1.0f);
+            glm::vec4 camera_lookat_l = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c;
+            glm::vec4 camera_up_vector = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+            view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
+        }
 
         // Agora computamos a matriz de Projeção.
         glm::mat4 projection;
@@ -698,6 +794,11 @@ int main(int argc, char *argv[])
 #define RADIATOR 8
 #define RAT 9
 #define TABLE 10
+#define BREAD 11
+#define REFRIGERATOR 12
+#define SINK 13
+#define REMOTE 14
+#define FAN 15
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(room_model_matrix));
@@ -746,6 +847,26 @@ int main(int argc, char *argv[])
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(table_model_matrix));
         DrawVirtualObjectMtl(&tablemodel, table_textures, TABLE);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(bread_model_matrix));
+        DrawVirtualObjectMtl(&breadmodel, bread_textures, BREAD);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(refrigerator_model_matrix));
+        DrawVirtualObjectMtl(&refrigeratormodel, refrigerator_textures, REFRIGERATOR);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(sink_model_matrix));
+        DrawVirtualObjectMtl(&sinkmodel, sink_textures, SINK);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(remote_model_matrix));
+        DrawVirtualObjectMtl(&remotemodel, remote_textures, REMOTE);
+
+        glActiveTexture(GL_TEXTURE0);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(fan_model_matrix));
+        DrawVirtualObjectMtl(&fanmodel, fan_textures, FAN);
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -1483,46 +1604,62 @@ void MouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 // cima da janela OpenGL.
 void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
 {
-    // Abaixo executamos o seguinte: caso o botão esquerdo do mouse esteja
-    // pressionado, computamos quanto que o mouse se movimento desde o último
-    // instante de tempo, e usamos esta movimentação para atualizar os
-    // parâmetros que definem a posição da câmera dentro da cena virtual.
-    // Assim, temos que o usuário consegue controlar a câmera.
+    if (!useLookAt)
+    {
+        // Lógica da Câmera Livre (mouse look)
+        static float horizontal = -90.0f; 
+        static float vertical = 0.0f;
+        static float x_pos = 400.0f; 
+        static float y_pos = 400.0f;
 
-    // Needs to be static so it doesnt "teleports" a little.
-    // WARN: static variables were chosen after asking chat-GPT for help
-    static float horizontal = -90.0f; // - Z, since we use right hand
-    static float vertical = 0.0f;
-    static float x_pos = 400.0f; // 800 x 800  / 2
-    static float y_pos = 400.0f;
+        float xoffset = (float)xpos - x_pos;
+        float yoffset = y_pos - (float)ypos;
 
-    // Mouse movement
-    float xoffset = (float)xpos - x_pos;
-    float yoffset = y_pos - (float)ypos;
+        x_pos = (float)xpos;
+        y_pos = (float)ypos;
 
-    // Update last position
-    x_pos = (float)xpos;
-    y_pos = (float)ypos;
+        xoffset *= sensitivity;
+        yoffset *= sensitivity;
 
-    // Apply sensibility
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
+        horizontal += xoffset;
+        vertical += yoffset;
 
-    // Update angles
-    horizontal += xoffset;
-    vertical += yoffset;
+        if (vertical > 89.0f)
+            vertical = 89.0f;
+        if (vertical < -89.0f)
+            vertical = -89.0f;
 
-    if (vertical > 89.0f) // Prevents camera from doing a sharp turn
-        vertical = 89.0f;
-    if (vertical < -89.0f)
-        vertical = -89.0f;
+        glm::vec3 direction;
+        direction.x = cos(glm::radians(horizontal)) * cos(glm::radians(vertical));
+        direction.y = sin(glm::radians(vertical));
+        direction.z = sin(glm::radians(horizontal)) * cos(glm::radians(vertical));
+        player.front_vector = glm::normalize(direction);
+    }
+    else
+    {
+        // Lógica da Câmera Orbital (arrastar com o botão esquerdo)
+        if (g_LeftMouseButtonPressed)
+        {
+            float dx = xpos - g_LastCursorPosX;
+            float dy = ypos - g_LastCursorPosY;
 
-    // Creates direction vector based on cursor movement
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(horizontal)) * cos(glm::radians(vertical));
-    direction.y = sin(glm::radians(vertical));
-    direction.z = sin(glm::radians(horizontal)) * cos(glm::radians(vertical));
-    player.front_vector = glm::normalize(direction);
+            g_CameraTheta -= 0.01f * dx;
+            g_CameraPhi += 0.01f * dy;
+
+            float pi = 3.141592f;
+            float max_phi = pi / 2.0f - 0.01f;
+            float min_phi = -max_phi;
+
+            if (g_CameraPhi > max_phi)
+                g_CameraPhi = max_phi;
+
+            if (g_CameraPhi < 0.01f) 
+                g_CameraPhi = 0.01f;
+
+            g_LastCursorPosX = xpos;
+            g_LastCursorPosY = ypos;
+        }
+    }
 }
 
 // Função callback chamada sempre que o usuário movimenta a "rodinha" do mouse.
@@ -1624,6 +1761,35 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
         LoadShadersFromFiles();
         fprintf(stdout, "Shaders recarregados!\n");
         fflush(stdout);
+    }
+
+    if (key == GLFW_KEY_C && action == GLFW_PRESS)
+    {
+        useLookAt = !useLookAt;
+
+       // Se acabamos de MUDAR PARA a câmera look-at (visão externa)
+        if (useLookAt)
+        {
+            // Redefinimos os parâmetros da câmera orbital para uma visão externa e elevada.
+            
+            // 1. Aumenta a DISTÂNCIA para ver a casa inteira de longe.
+            g_CameraDistance = 60.0f; 
+            
+            // 2. Define um ÂNGULO DE ELEVAÇÃO (altura) para ver por cima. (1.0 radiano ~= 57 graus)
+            g_CameraPhi = 0.5f;
+            
+            // 3. Define um ÂNGULO HORIZONTAL para ver a casa pela quina. (0.785 radiano = 45 graus)
+            g_CameraTheta = 2.0f; 
+
+            // Habilita o cursor para a câmera orbital poder ser movida (se desejado)
+             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+        else // Se acabamos de MUDAR PARA a câmera livre (visão interna)
+        {
+            // Desabilita o cursor para o modo de primeira pessoa
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+        
     }
 }
 

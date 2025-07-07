@@ -2472,9 +2472,9 @@ vt 0.019854 0.702822
 # num_vertices: 1234
 
 
-g Object_TexMap_0
+g Object_TexMap5_0
 
-usemtl TexMap
+usemtl TexMap5
 
 f 1/1 2/2 3/3
 f 2/2 4/4 3/3
@@ -2585,9 +2585,9 @@ f 45/45 64/64 61/61
 f 64/64 63/63 61/61
 f 61/61 63/63 62/62
 
-g Object_TexMap_1
+g Object_TexMap5_1
 
-usemtl TexMap
+usemtl TexMap5
 
 f 65/65 66/66 67/67
 f 66/66 68/68 67/67
@@ -2714,9 +2714,9 @@ f 103/103 134/134 104/104
 f 134/134 133/133 104/104
 f 104/104 133/133 105/105
 
-g Object_TexMap_2
+g Object_TexMap5_2
 
-usemtl TexMap
+usemtl TexMap5
 
 f 137/137 138/138 139/139
 f 138/138 140/140 139/139
@@ -2797,9 +2797,9 @@ f 181/181 182/182 186/186
 f 182/182 183/183 186/186
 f 186/186 183/183 185/185
 
-g Object_TexMap_3
+g Object_TexMap5_3
 
-usemtl TexMap
+usemtl TexMap5
 
 f 187/187 188/188 189/189
 f 189/189 188/188 190/190
@@ -2910,9 +2910,9 @@ f 237/237 250/250 238/238
 f 238/238 250/250 239/239
 f 250/250 240/240 239/239
 
-g Object_TexMap_4
+g Object_TexMap5_4
 
-usemtl TexMap
+usemtl TexMap5
 
 f 251/251 252/252 253/253
 f 253/253 252/252 254/254
@@ -3009,9 +3009,9 @@ f 306/306 294/294 304/304
 f 294/294 303/303 304/304
 f 306/306 304/304 305/305
 
-g Object_TexMap_5
+g Object_TexMap5_5
 
-usemtl TexMap
+usemtl TexMap5
 
 f 307/307 308/308 309/309
 f 309/309 308/308 310/310

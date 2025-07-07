@@ -1,0 +1,4 @@
+/home/aline/Documents/ufrgs/fcg/projeto/Computer-graphics-final-project/CMakeFiles/main.dir
+/home/aline/Documents/ufrgs/fcg/projeto/Computer-graphics-final-project/CMakeFiles/run.dir
+/home/aline/Documents/ufrgs/fcg/projeto/Computer-graphics-final-project/CMakeFiles/edit_cache.dir
+/home/aline/Documents/ufrgs/fcg/projeto/Computer-graphics-final-project/CMakeFiles/rebuild_cache.dir
