@@ -242,6 +242,8 @@ float interactive_timer = 0.0f;
 bool is_e_pressed = false;
 
 bool is_rat_active = true;
+float start_game = 6.0;
+float endgame = 4.0f;
 
 // MAIN
 
@@ -404,7 +406,8 @@ int main(int argc, char *argv[])
         glm::vec3(0.3f, 0.8f, 0.3f)     // max
     };
 
-    // FONTE: Chat gpt + gemini
+    // FONTE: Chat gpt + gemini - Não estávamos conseguindo desenhar o ponto preto
+    // Os arquivos de vertex e fragment foram obtidos a partir dos labs
     GLuint crosshair_vertex_shader_id = LoadShader_Vertex("../../src/crosshair_vertex.glsl");
     GLuint crosshair_fragment_shader_id = LoadShader_Fragment("../../src/crosshair_fragment.glsl");
     g_CrosshairShaderID = CreateGpuProgram(crosshair_vertex_shader_id, crosshair_fragment_shader_id);
@@ -762,6 +765,19 @@ int main(int argc, char *argv[])
             interactive_timer -= time_diff;
             float x = -0.5f * interactive_text.length() * 0.05f;
             TextRendering_PrintString(window, interactive_text, x, -0.8f, 3.0f);
+        }
+
+        if (start_game > 0.0f)
+        {
+            start_game -= time_diff;
+            std::string start_text = "Se assegure de tudo estar em ordem antes de ir dormir.";
+
+            float scale = 2.5f;
+            float text_width = start_text.length() * 0.011f * scale;
+
+            float x_pos = -text_width / 2.0f;
+            float y_pos = 0.0f;
+            TextRendering_PrintString(window, start_text, x_pos, y_pos, scale);
         }
 
         glUseProgram(g_CrosshairShaderID); // Ativa o shader do crosshair
