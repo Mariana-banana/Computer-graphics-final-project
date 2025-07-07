@@ -2,6 +2,10 @@
 #include <glm/geometric.hpp>
 #include <algorithm>
 
+#include <glm/mat4x4.hpp>
+#include <glm/vec4.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 bool CheckPointSphereCollision(glm::vec3 point, const Sphere &sphere)
 {
     float diff_x = point.x - sphere.center.x;
@@ -62,4 +66,11 @@ bool TestAABBvsPlane(const AABB &box, const Plane &plane)
     float s = glm::dot(plane.normal, center) - plane.distance;
 
     return std::abs(s) <= r;
+}
+
+bool TestSphereVsPlane(const Sphere &sphere, const Plane &plane)
+{
+    float s = glm::dot(plane.normal, sphere.center) - plane.distance;
+
+    return std::abs(s) <= sphere.radius;
 }

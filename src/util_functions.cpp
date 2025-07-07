@@ -42,69 +42,6 @@ glm::vec3 CalculateBezierTangent(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 
     return glm::vec3(0.0f, 0.0f, 1.0f);
 }
 
-void UpdateBunny(float time_diff, float &bezier_t, int &bezier_direction,
-                 glm::mat4 &out_bunny_model, AABB &out_bunny_collider)
-{
-    extern float bezier_speed;
-    extern glm::vec3 bezier_p0, bezier_p1, bezier_p2, bezier_p3;
-    extern glm::vec3 local_bunny_min, local_bunny_max;
-
-    bezier_t += bezier_direction * bezier_speed * time_diff;
-    if (bezier_t > 1.0f)
-    {
-        bezier_t = 1.0f;
-        bezier_direction = -1;
-    }
-    else if (bezier_t < 0.0f)
-    {
-        bezier_t = 0.0f;
-        bezier_direction = 1;
-    }
-
-    glm::vec3 bunny_pos = CalculateBezierPoint(bezier_t, bezier_p0, bezier_p1, bezier_p2, bezier_p3);
-    glm::vec3 bunny_dir = CalculateBezierTangent(bezier_t, bezier_p0, bezier_p1, bezier_p2, bezier_p3);
-    if (bezier_direction == -1)
-    {
-        bunny_dir *= -1.0f;
-    }
-
-    float angle_y = atan2(bunny_dir.x, bunny_dir.z);
-    float correction = glm::radians(90.0f);
-
-    out_bunny_model = Matrix_Translate(bunny_pos.x, bunny_pos.y, bunny_pos.z) * Matrix_Rotate_Y(angle_y) * Matrix_Rotate_Y(correction);
-
-    glm::vec3 corners[8] = {
-        glm::vec3(local_bunny_min.x, local_bunny_min.y, local_bunny_min.z),
-        glm::vec3(local_bunny_max.x, local_bunny_min.y, local_bunny_min.z),
-        glm::vec3(local_bunny_min.x, local_bunny_max.y, local_bunny_min.z),
-        glm::vec3(local_bunny_min.x, local_bunny_min.y, local_bunny_max.z),
-        glm::vec3(local_bunny_max.x, local_bunny_max.y, local_bunny_min.z),
-        glm::vec3(local_bunny_min.x, local_bunny_max.y, local_bunny_max.z),
-        glm::vec3(local_bunny_max.x, local_bunny_min.y, local_bunny_max.z),
-        glm::vec3(local_bunny_max.x, local_bunny_max.y, local_bunny_max.z)};
-
-    glm::vec3 transformed_corner = out_bunny_model * glm::vec4(corners[0], 1.0f);
-    out_bunny_collider.min = transformed_corner;
-    out_bunny_collider.max = transformed_corner;
-
-    for (int i = 1; i < 8; ++i)
-    {
-        transformed_corner = out_bunny_model * glm::vec4(corners[i], 1.0f);
-
-        out_bunny_collider.min = glm::min(out_bunny_collider.min, transformed_corner);
-        out_bunny_collider.max = glm::max(out_bunny_collider.max, transformed_corner);
-    }
-}
-
-void UpdateSphere(glm::mat4 &out_sphere_model, Sphere &out_sphere_collider)
-{
-    extern float sphere_radius;
-
-    out_sphere_model = Matrix_Translate(-1.0f, 0.0f, 0.0f);
-    out_sphere_collider.center = glm::vec3(out_sphere_model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-    out_sphere_collider.radius = sphere_radius;
-}
-
 void UpdatePlayerPosition(GLFWwindow *window, float time_diff, Player &player,
                           const std::vector<CollidableObject> &collidables)
 {
@@ -201,7 +138,7 @@ bool RayIntersectsSphere(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
 
     if (discriminant < 0)
     {
-        return false; // Não houve intersecção
+        return false;
     }
 
     //  A intersecção mais próxima, com t > 0
@@ -232,15 +169,14 @@ bool RayIntersectsAABB(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
     glm::vec3 t1 = (box.min - ray_origin) * invDir;
     glm::vec3 t2 = (box.max - ray_origin) * invDir;
 
-    // Garante que t1 sempre tenha os tempos de entrada nos "slabs"
     glm::vec3 tmin_vec = glm::min(t1, t2);
     glm::vec3 tmax_vec = glm::max(t1, t2);
 
-    // Encontra o último tempo de entrada (t_near) e o primeiro tempo de saída (t_far)
+    // último tempo de saída e primeiro de entrada
     float t_near = max(max(tmin_vec.x, tmin_vec.y), tmin_vec.z);
     float t_far = min(min(tmax_vec.x, tmax_vec.y), tmax_vec.z);
 
-    // Condições de falha
+    // Condicoes para falha
     if (t_near > t_far || t_far < 0)
     {
         return false;
@@ -297,7 +233,7 @@ std::string CheckRaycastFromCenter(const Player &player, std::vector<CollidableO
             {
                 if (i != closest_index && objects[i].is_interactive && objects[i].text != "cama")
                 {
-                    return "Voce morreu!" + objects[i].text;
+                    return "Voce morreu!";
                 }
             }
 
@@ -309,4 +245,67 @@ std::string CheckRaycastFromCenter(const Player &player, std::vector<CollidableO
     }
 
     return "";
+}
+
+void UpdateRat(Rat &rat, const Player &player, const std::vector<CollidableObject> &other_collidables, float time_diff)
+{
+    float next_t = rat.t + rat.direction * rat.speed * time_diff;
+    glm::vec3 potential_pos = CalculateBezierPoint(next_t, rat.p0, rat.p1, rat.p2, rat.p3);
+
+    Sphere potential_collider = {potential_pos, rat.radius};
+
+    bool has_collided = false;
+    AABB player_collider = {player.local_collider.min + player.position, player.local_collider.max + player.position};
+
+    if (TestAABBvsSphere(player_collider, potential_collider))
+    {
+        has_collided = true;
+    }
+
+    if (!has_collided)
+    {
+        for (const auto &obj : other_collidables)
+        {
+            if (obj.shape_type == ShapeType::SHAPE_PLANE && TestSphereVsPlane(potential_collider, obj.plane))
+            {
+                has_collided = true;
+                break;
+            }
+            if (obj.shape_type == ShapeType::SHAPE_AABB && TestAABBvsSphere(obj.aabb, potential_collider))
+            {
+                has_collided = true;
+                break;
+            }
+        }
+    }
+
+    if (has_collided)
+    {
+        rat.direction *= -1;
+    }
+
+    rat.t += rat.direction * rat.speed * time_diff;
+    if (rat.t > 1.0f)
+    {
+        rat.t = 1.0f;
+        rat.direction = -1;
+    }
+    if (rat.t < 0.0f)
+    {
+        rat.t = 0.0f;
+        rat.direction = 1;
+    }
+
+    rat.position = CalculateBezierPoint(rat.t, rat.p0, rat.p1, rat.p2, rat.p3);
+    glm::vec3 rat_dir = CalculateBezierTangent(rat.t, rat.p0, rat.p1, rat.p2, rat.p3);
+    if (rat.direction == -1)
+    {
+        rat_dir *= -1.0f;
+    }
+    float angle_y = atan2(rat_dir.x, rat_dir.z);
+
+    rat.model_matrix = Matrix_Translate(rat.position.x, rat.position.y, rat.position.z) * Matrix_Rotate_Y(angle_y) * Matrix_Scale(rat.scale, rat.scale, rat.scale);
+
+    rat.collider.center = rat.position;
+    rat.collider.radius = rat.radius;
 }

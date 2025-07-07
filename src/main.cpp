@@ -104,9 +104,7 @@ struct SceneObject
 
 Player player;
 
-glm::vec3 local_bunny_min = glm::vec3(-0.3f, 0.0f, -0.3f);
-glm::vec3 local_bunny_max = glm::vec3(0.3f, 1.1f, 0.3f);
-float sphere_radius = 1.2f;
+Rat rat;
 
 // DECLARAÇÃO DAS FUNÇÕES
 
@@ -234,17 +232,6 @@ float time_diff = 0.0f;
 float normal_speed = 10.5f;
 float run_speed = 15.5f;
 
-// Pontos de controle para a curva de Bézier
-glm::vec3 bezier_p0 = glm::vec3(1.5f, 0.0f, 0.0f);
-glm::vec3 bezier_p1 = glm::vec3(0.75f, 0.0f, 1.5f);
-glm::vec3 bezier_p2 = glm::vec3(-0.75f, 0.0f, 1.5f);
-glm::vec3 bezier_p3 = glm::vec3(-1.5f, 0.0f, 0.0f);
-
-// Controles do comportamento durante a curva
-float bezier_t = 0.0f;
-float bezier_speed = 0.15f;
-int bezier_direction = 1;
-
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 GLuint g_CrosshairShaderID = 0;
@@ -253,6 +240,8 @@ GLuint g_CrosshairVao = 0;
 std::string interactive_text = "";
 float interactive_timer = 0.0f;
 bool is_e_pressed = false;
+
+bool is_rat_active = true;
 
 // MAIN
 
@@ -537,7 +526,7 @@ int main(int argc, char *argv[])
 
     CollidableObject sofa;
     sofa.shape_type = ShapeType::SHAPE_AABB;
-    sofa.aabb.min = glm::vec3(5.4f, -5.0f, 1.63f);
+    sofa.aabb.min = glm::vec3(5.4f, -8.0f, 1.63f);
     sofa.aabb.max = glm::vec3(17.94f, 5.0f, 7.78f);
     sofa.text = "";
     sofa.is_interactive = false;
@@ -587,11 +576,6 @@ int main(int argc, char *argv[])
     radiator.is_interactive = true;
     scene_collidables.push_back(radiator);
 
-    // Matriz RAT
-    float rat_scale = 1.2f;
-    glm::vec3 rat_position = glm::vec3(4.0f, -4.5f, -3.0f);
-    glm::mat4 rat_model_matrix = Matrix_Translate(rat_position.x, rat_position.y, rat_position.z) * Matrix_Scale(rat_scale, rat_scale, rat_scale) * Matrix_Rotate_Y(-1.4f);
-
     // Matriz TABLE
     float table_scale = 3.5f;
     glm::vec3 table_position = glm::vec3(4.0f, -7.5f, -4.0f);
@@ -601,9 +585,17 @@ int main(int argc, char *argv[])
     table.shape_type = ShapeType::SHAPE_AABB;
     table.aabb.min = glm::vec3(0.6f, -5.0f, -9.0f);
     table.aabb.max = glm::vec3(6.8f, 5.0f, 0.3f);
-    table.text = "Uma mesa com um rato em cima.";
-    table.is_interactive = true;
+    table.text = "";
+    table.is_interactive = false;
     scene_collidables.push_back(table);
+
+    // RAT
+    rat.collider.radius = 0.5f;
+    CollidableObject rat_placeholder;
+    rat_placeholder.shape_type = ShapeType::SHAPE_SPHERE;
+    rat_placeholder.text = "Voce se livrou do rato";
+    rat_placeholder.is_interactive = true;
+    scene_collidables.push_back(rat_placeholder);
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -623,11 +615,21 @@ int main(int argc, char *argv[])
 
         glUseProgram(g_GpuProgramID);
 
-        UpdatePlayerPosition(window, time_diff, player, scene_collidables);
+        if (is_rat_active)
+        {
+            UpdateRat(rat, player, scene_collidables, time_diff);
 
-        printf("Player Position: X=%.2f, Y=%.2f, Z=%.2f\r",
-               player.position.x, player.position.y, player.position.z);
-        fflush(stdout); // Força a impressão imediata no terminal
+            for (auto &obj : scene_collidables)
+            {
+                if (obj.text == "Voce se livrou do rato")
+                {
+                    obj.sphere = rat.collider;
+                    break;
+                }
+            }
+        }
+
+        UpdatePlayerPosition(window, time_diff, player, scene_collidables);
 
         if (is_e_pressed)
         {
@@ -638,6 +640,11 @@ int main(int argc, char *argv[])
             {
                 interactive_text = result_text;
                 interactive_timer = 2.0f;
+            }
+
+            if (interactive_text == "Voce se livrou do rato")
+            {
+                is_rat_active = false;
             }
             is_e_pressed = false;
         }
@@ -726,9 +733,12 @@ int main(int argc, char *argv[])
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(radiator_model_matrix));
         DrawVirtualObjectMtl(&radiatormodel, radiator_textures, RADIATOR);
 
-        glActiveTexture(GL_TEXTURE0);
-        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(rat_model_matrix));
-        DrawVirtualObjectMtl(&ratmodel, rat_textures, RAT);
+        if (is_rat_active)
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(rat.model_matrix));
+            DrawVirtualObjectMtl(&ratmodel, rat_textures, RAT);
+        }
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(table_model_matrix));

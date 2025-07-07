@@ -14,11 +14,6 @@ glm::vec3 CalculateBezierPoint(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p2
 glm::vec3 CalculateBezierTangent(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3);
 
 // Atualização dos objs
-void UpdateBunny(float time_diff, float &bezier_t, int &bezier_direction,
-                 glm::mat4 &out_bunny_model, AABB &out_bunny_collider);
-
-void UpdateSphere(glm::mat4 &out_sphere_model, Sphere &out_sphere_collider);
-
 void UpdatePlayerPosition(GLFWwindow *window, float time_diff, Player &player,
                           const std::vector<CollidableObject> &collidables);
 
@@ -34,3 +29,5 @@ bool RayIntersectsAABB(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
                        const AABB &box, float &t_out);
 
 std::string CheckRaycastFromCenter(const Player &player, std::vector<CollidableObject> &objects, bool &is_player_asleep);
+
+void UpdateRat(Rat &rat, const Player &player, const std::vector<CollidableObject> &other_collidables, float time_diff);
