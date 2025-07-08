@@ -292,9 +292,15 @@ int main(int argc, char *argv[])
     BuildTrianglesAndAddToVirtualScene(&roommodel);
     std::map<std::string, GLuint> room_textures = GetTexturesFromMtl(&roommodel, "../../data/room/");
 
-    ObjModel floormodel("../../data/floor/plane.obj");
-    ComputeNormals(&floormodel);
-    BuildTrianglesAndAddToVirtualScene(&floormodel);
+    //ObjModel floormodel("../../data/floor/plane.obj");
+    //ComputeNormals(&floormodel);
+    //BuildTrianglesAndAddToVirtualScene(&floormodel);
+
+    ObjModel floor2model("../../data/floor2/J0IGAU84WM2TT649KPQVJYR4B.obj");
+    ComputeNormals(&floor2model);
+    BuildTrianglesAndAddToVirtualScene(&floor2model);
+    std::map<std::string, GLuint> floor2_textures = GetTexturesFromMtl(&floor2model, "../../data/floor2/");
+
 
     ObjModel bedmodel("../../data/bed/RFSBI1TUMBM1R2T06LF7JZ3LC.obj");
     ComputeNormals(&bedmodel);
@@ -472,11 +478,14 @@ int main(int argc, char *argv[])
     scene_collidables.push_back(parede_direita);
 
     // Matriz FLOOR
-    float floor_scale = 100.0f;
-    glm::vec3 floor_position = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::mat4 floor_model_matrix = Matrix_Translate(0.0f, -9.0f, 0.0f) * Matrix_Scale(floor_scale, floor_scale, floor_scale);
+    //float floor_scale = 100.0f;
+    //glm::vec3 floor_position = glm::vec3(0.0f, 0.0f, 0.0f);
+    //glm::mat4 floor_model_matrix = Matrix_Translate(0.0f, -9.0f, 0.0f) * Matrix_Scale(floor_scale, floor_scale, floor_scale);
 
-    float floor_y = -9.0f + floor_scale;
+    // Matriz FLOOR
+    glm::mat4 floor2_model_matrix = Matrix_Translate(0.0f, -9.0f, 0.0f) * Matrix_Scale(150.0f, 0.0f, 300.0f) * Matrix_Rotate_Z(1.55f);
+
+    float floor_y = -9.0f + 300.0f;
 
     CollidableObject floor;
     floor.shape_type = ShapeType::SHAPE_PLANE;
@@ -549,8 +558,8 @@ int main(int argc, char *argv[])
 
     CollidableObject tv;
     tv.shape_type = ShapeType::SHAPE_AABB;
-    tv.aabb.min = glm::vec3(9.5f, -5.0f, 15.4f);
-    tv.aabb.max = glm::vec3(14.5f, 5.0f, 19.6f);
+    tv.aabb.min = glm::vec3(8.0f, -5.0f, 15.5f);
+    tv.aabb.max = glm::vec3(15.5f, 5.0f, 19.6f);
     tv.text = "";
     tv.is_interactive = false;
     scene_collidables.push_back(tv);
@@ -653,7 +662,7 @@ int main(int argc, char *argv[])
         time_diff = current_time - last_time;
         last_time = current_time;
 
-        glClearColor(0.05f, 0.05f, 0.15f, 1.0f); // Cor do fundo simulando céu à noite
+        glClearColor(0.1f, 0.07f, 0.25f, 1.0f); // Cor do fundo simulando céu à noite
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -767,10 +776,14 @@ int main(int argc, char *argv[])
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(room_model_matrix));
         DrawVirtualObjectWithMtl(&roommodel, room_textures, ROOM);
 
+        //glActiveTexture(GL_TEXTURE0);
+        //glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(floor_model_matrix));
+        //glUniform1f(g_object_id_uniform, FLOOR);
+        //DrawVirtualObject("the_plane");
+
         glActiveTexture(GL_TEXTURE0);
-        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(floor_model_matrix));
-        glUniform1f(g_object_id_uniform, FLOOR);
-        DrawVirtualObject("the_plane");
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(floor2_model_matrix));
+        DrawVirtualObjectWithMtl(&floor2model, floor2_textures, FLOOR);
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(bed_model_matrix));
@@ -1573,18 +1586,6 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
     if (key == GLFW_KEY_E && action == GLFW_PRESS)
     {
         is_e_pressed = true;
-    }
-
-    // Se o usuário apertar a tecla P, utilizamos projeção perspectiva.
-    if (key == GLFW_KEY_P && action == GLFW_PRESS)
-    {
-        g_UsePerspectiveProjection = true;
-    }
-
-    // Se o usuário apertar a tecla O, utilizamos projeção ortográfica.
-    if (key == GLFW_KEY_O && action == GLFW_PRESS)
-    {
-        g_UsePerspectiveProjection = false;
     }
 
     // Se o usuário apertar a tecla H, fazemos um "toggle" do texto informativo mostrado na tela.

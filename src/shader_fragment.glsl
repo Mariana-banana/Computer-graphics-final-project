@@ -75,7 +75,12 @@ void main()
     }
     else if ( object_id == FLOOR )
     {
-        final_color = vec3(0.5, 0.25, 0.0);
+        //final_color = vec3(0.5, 0.25, 0.0);
+
+        U = texcoords.x;
+        V = texcoords.y;
+        
+        final_color = (0.4, 0.4, 0.4) * texture(TextureImage0, vec2(U, V)).rgb;
     }
     else if (object_id == STOVE) 
     {
