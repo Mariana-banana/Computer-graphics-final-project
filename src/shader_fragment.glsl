@@ -163,10 +163,11 @@ void main()
     {
         U = texcoords.x;
         V = texcoords.y;
-        Ka = vec3(0.000000, 0.000000, 0.000000);
-        Ks = vec3(0.000000, 0.000000, 0.000000);
-        q = 84916;
+        Ka = vec3(0.2, 0.15, 0.05); 
+        Ks = vec3(0.3, 0.3, 0.3);   
+        q = 32.0;                  
         alfa = 1.000000;
+        
         Kd0 = vec3(0.9, 0.9, 0.9) * texture(TextureImage0, fract(vec2(U,V))).rgb;
 
         vec3 I = vec3(1.0, 1.0, 1.0); 
@@ -174,7 +175,7 @@ void main()
 
         vec3 lambert = I*max(0,dot(n,l));
         vec3 ambient_term = Ka*Ia;
-        vec3 blinn_phong_specular_term  = Ks*I*pow(dot(n.xyz,h.xyz),q);
+        vec3 blinn_phong_specular_term  = Ks*I*pow(max(0.0, dot(n.xyz,h.xyz)),q);
 
         final_color = Kd0 * (lambert) + ambient_term + blinn_phong_specular_term;
     }

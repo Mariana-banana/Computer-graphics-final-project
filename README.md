@@ -78,18 +78,55 @@ DrawVirtualObjectWithMtl(&breadmodel, bread_textures, BREAD);
 
 ### Modelos de Iluminação e Modelos de Interpolação
 
+Há dois objetos que tem sua cor calculada utilizando um modelo de iluminação: BREAD e RADIATOR. O _fragment shader_ recebe utiliza o objecct_id para diferenciar os diferentes objetos presentes no jogo. Para BREAD a cor é calculada usando o modelo de iluminação Blinn-Phong. Para RADIATOR a cor é calculada usando o modelo de iluminação de Lambert (Difusa).
+
+Para calcular a cor final usando o modelo de iluminação de Lambert, foi multiplicada a cor difusa obtida através da textura multiplicada por um vetor (0.9, 0.9, 0.9) para ajuste do brilho e pelo termo de iluminação _lambert_. Esse termo foi calculado a partir do produto vetorial entre a normal da superfície e a fonte de luz. O termo lambert garante que as superfícies não voltadas para luz não recebam iluminação, pois o resultado do produto vetorial indica o quanto a luz incide na superfície.
+
+![RADIATOR com iluminação](screenshots/14.png)
+
+A cor final usando modelo de iluminação Blinn-Phong é obtida através da soma de três componentes distintas: difusa, ambiente e especular. A componente difusa é determinada pela cor da imagem de textura do objeto . A componente ambiente é obtida através da multiplicação do coeficiente Ka por uma luz ambiente global, garantindo que as áreas em sombra não fiquem totalmente escuras e recebam uma tonalidade de base, como podemos ver na imagem abaixo. Por fim, a componente especular adiciona um ponto de brilho na superfície. A soma dessas três componentes resulta na aparência final do material, com cor, sombreamento, e realces de brilho.
+
 ![BREAD com iluminação ](screenshots/13.png)
 
-![Objeto RAT movendo em outra direção após colidir](screenshots/14.png)
+O cálculo dos modelos de iluminação segue o que foi aprendido nas aulas e na realização do laboratório 4. Como mencionado, todos objetos que possuem cálculo de iluminação tem esse cálculo realizado no _fragment shader_, o que caracteriza um modelo de interpolação Phong. O jogo não possui nenhum objeto com iluminação calculada usando modelo de interpolação Gouraud. A princípio, este é o único requisito não desenvolvido pela dupla.
 
 ### Movimentação com Curva de Bézier Cúbica
 
+_adicionar parágrafo(s) sobre implementação da curva_
+
 ## Animações Baseadas em Tempo
+
+_adicionar parágrafo(s) sobre implementação da dasmovimentações baseadas em tempo_
 
 ## Contribuições
 
 ### Aline
 
+- Leitura de arquivos .obj e .mtl
+- Pesquisa por modelos 3D compatíveis com o as funções de leitura e desenho
+- Desenho dos objetos
+- Posicionamento dos objetos da cena virtual por meio de transformações geométricas
+- Mapeamento de texturas
+- Modelos de iluminação Lambert e Blinn-Phong
+- Modelo de interpolação Phong
+- Câmera look at
+- Lógica para troca entre câmeras
+
 ### Mariana
 
-## Uso de Códigos Gerados por Inteligência Artificial
+_adicionar tópicos sobre parte que implementou_
+
+## Uso de Inteligência Artificial
+
+Ao longo do desenvolvimento do jogo a dupla fez uso do ChatGPT e do Gemini. Os principais usos foram para entender como algo que estava fora do conhecimento da dupla poderia ser feito e encontrar a fonte de erros. Há trechos do código que são adaptações de códigos gerados por inteligência artificial, o que permitiu que a dupla solucionasse problemas encontrados, os quais a dupla não tinha conhecimento para resolver. Em um caso específico, detalhado a seguir, mesmo com o uso de inteligênca artificial não foi possível resolver o problema. 
+
+A dupla encontrou bastante dificuldade para ler as informações de modelos 3D que possuiam tanto arquivos .obj quanto arquivos .mtl e passar essas informações para os _shaders_. Foi utilizada inteligência artificial primeiramente para entender a estrutura desses arquivos e como eles se relacionavam. Posteriormente, para encontrar maneiras de passar essas informações de forma correta para os _shaders_. A dupla conseguiu passar as informações de textura (imagens de textura) para os shaders utilizando o arquivo .mtl, porém não conseguiu passar corretamente as informações de iluminação (coeficientes) que também estavam definidos no arquivo. Os coeficientes de iluminação foram adicionados manualmente no _fragment shader_.
+
+Um exemplo de uso dessas ferramentas para encontrar fonte de erros foi quando, ao tentar renderizar os objetos do jogo, a dupla se deparou com o erro da imagem a seguir. Utilizando essas ferramentas para entender as possíveis fontes do erro, identificamos que estava sendo enviado para função que relaciona as texturas com cada objeto o caminho errado da localização das imagens.
+
+![Erro no carregamento das texturas](screenshots/15.png)
+
+_adicionar parágrafo(s) sobre uso de ia para o ponto (alvo)_
+
+
+
