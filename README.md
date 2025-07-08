@@ -30,13 +30,13 @@ Para o carregamento dos objetos e das texturas foram utilizados conhecimentos ad
 
 O jogo desenvolvido possui os dois tipos de cãmera: câmera livre e cãmera look at. Ao iniciar o jogo, o jogador está dentro da casa e tem uma visão obtida através da câmera livre, podendo se movimentar pelo cômodo utilizando o teclado e o mouse. 
 
-![Início do Jogo](screenshots/8.png)
+![Jogador com câmera livre](screenshots/8.png)
 
 _adicionar parágrafo sobre implementação da câmera livre_
 
 O jogador também tem a possibilidade de apertar a tecla _c_ e mudar o tipo de câmera virtual de câmera livre para câmera look at. Quando o jogador altera o tipo de câmera ele vai para o exterior da casa.
 
-![Início do Jogo](screenshots/7.png)
+![Jogador com câmera look at](screenshots/7.png)
 
 Quando a tecla é pressionada e a flag _useLookAt_ é ativada a posição da câmera é calculada em coordenadas esféricas. As variáveis *g_CameraPhi*, *g_CameraTheta*, *g_CameraDistance* definem sua posição. a câmera está fixamente olhando para a origem, onde está centrada a casa do jogo. Quando o botão esquerdo do mouse é pressionado, o movimento do cursor atualiza os ângulos *g_CameraTheta* e *g_CameraPhi*, fazendo a câmera orbitar ao redor da casa. Também é possível se aproximar ou se afastar da casa usando _scroll_ do mouse.
 
@@ -56,13 +56,31 @@ float bread2_scale = 0.5f;
 glm::vec3 bread2_position = glm::vec3(4.0f, -4.5f, -3.0f);
 glm::mat4 bread2_model_matrix = Matrix_Translate(bread2_position.x, bread2_position.y, bread2_position.z) 
                                 * Matrix_Scale(bread2_scale, bread2_scale, bread2_scale) * Matrix_Rotate_Y(-0.60f);
+
+// ... código entre dos dois trechos ...
+
+glActiveTexture(GL_TEXTURE0);
+glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(bread1_model_matrix));
+DrawVirtualObjectWithMtl(&breadmodel, bread_textures, BREAD);
+
+glActiveTexture(GL_TEXTURE0);
+glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(bread2_model_matrix));
+DrawVirtualObjectWithMtl(&breadmodel, bread_textures, BREAD);
 ```
 
-![Início do Jogo](screenshots/3.png)
+![Diferentes instâncias de BREAD](screenshots/3.png)
 
 ### Tipos de Testes de Intersecção
 
+![Objeto RAT movendo em uma direção antes de colidir](screenshots/11.png)
+
+![Objeto RAT movendo em outra direção após colidir](screenshots/12.png)
+
 ### Modelos de Iluminação e Modelos de Interpolação
+
+![BREAD com iluminação ](screenshots/13.png)
+
+![Objeto RAT movendo em outra direção após colidir](screenshots/14.png)
 
 ### Movimentação com Curva de Bézier Cúbica
 
