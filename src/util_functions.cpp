@@ -11,15 +11,15 @@ using namespace std;
 glm::vec3 CalculateBezierPoint(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3)
 {
     float u = 1.0f - t;
-    float tt = t * t;
-    float uu = u * u;
-    float uuu = uu * u;
-    float ttt = tt * t;
+    float t2 = t * t;
+    float u2 = u * u;
+    float u3 = u2 * u;
+    float t3 = t2 * t;
 
-    glm::vec3 p = uuu * p0;
-    p += 3 * uu * t * p1;
-    p += 3 * u * tt * p2;
-    p += ttt * p3;
+    glm::vec3 p = u3 * p0;
+    p += 3 * u2 * t * p1;
+    p += 3 * u * t2 * p2;
+    p += t3 * p3;
 
     return p;
 }
@@ -27,18 +27,19 @@ glm::vec3 CalculateBezierPoint(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p2
 glm::vec3 CalculateBezierTangent(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3)
 {
     float u = 1.0f - t;
-    float uu = u * u;
-    float tt = t * t;
+    float u2 = u * u;
+    float t2 = t * t;
 
-    glm::vec3 tangent = -3 * uu * p0;
-    tangent += (3 * uu - 6 * u * t) * p1;
-    tangent += (6 * u * t - 3 * tt) * p2;
-    tangent += 3 * tt * p3;
+    glm::vec3 tangent = -3 * u2 * p0;
+    tangent += (3 * u2 - 6 * u * t) * p1;
+    tangent += (6 * u * t - 3 * t2) * p2;
+    tangent += 3 * t2 * p3;
 
     if (glm::length(tangent) > 0.0001f)
     {
         return glm::normalize(tangent);
     }
+    // Se a tg tender a 0, retornamos um vetor padrão
     return glm::vec3(0.0f, 0.0f, 1.0f);
 }
 
@@ -186,7 +187,7 @@ bool RayIntersectsAABB(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
     return true;
 };
 
-std::string CheckRaycastFromCenter(const Player &player, std::vector<CollidableObject> &objects, bool &is_player_asleep)
+std::string CheckRaycastFromCenter(const Player &player, std::vector<CollidableObject> &objects, bool &is_player_asleep, bool &rotate_breads)
 {
     float closest_distance = std::numeric_limits<float>::max();
     int closest_index = -1;
@@ -221,8 +222,6 @@ std::string CheckRaycastFromCenter(const Player &player, std::vector<CollidableO
         CollidableObject &obj = objects[closest_index];
         obj.is_interactive = false;
 
-        std::cout << obj.text << std::endl;
-
         if (obj.text == "cama")
         {
             is_player_asleep = true;
@@ -231,7 +230,7 @@ std::string CheckRaycastFromCenter(const Player &player, std::vector<CollidableO
             // Se ainda tem objetos que deveriam ter sido desativados
             for (size_t i = 0; i < objects.size(); ++i)
             {
-                if (i != closest_index && objects[i].is_interactive && objects[i].text != "cama")
+                if (i != closest_index && objects[i].is_interactive && objects[i].text != "cama" && objects[i].text != "mesa")
                 {
                     return "Voce morreu!";
                 }
@@ -239,6 +238,12 @@ std::string CheckRaycastFromCenter(const Player &player, std::vector<CollidableO
 
             // senao, significa que terminamos o jogo
             return "Voce dorme tranquilamente!";
+        }
+
+        else if (obj.text == "mesa")
+        {
+            obj.is_interactive = true; // Queremos sempre poder interagir com a mesa
+            rotate_breads = true;
         }
 
         return obj.text;
@@ -266,6 +271,7 @@ void UpdateRat(Rat &rat, const Player &player, const std::vector<CollidableObjec
     {
         for (const auto &obj : other_collidables)
         {
+            // Como não há outros objetos esféricos, não há necessidade de teste de colisão Sphere vs Sphere
             if (obj.shape_type == ShapeType::SHAPE_PLANE && TestSphereVsPlane(potential_collider, obj.plane))
             {
                 has_collided = true;
@@ -285,6 +291,8 @@ void UpdateRat(Rat &rat, const Player &player, const std::vector<CollidableObjec
     }
 
     rat.t += rat.direction * rat.speed * time_diff;
+
+    // Se o rato atingiu o comprimento max, inverte a direção para voltar a origem
     if (rat.t > 1.0f)
     {
         rat.t = 1.0f;

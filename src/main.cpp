@@ -14,8 +14,8 @@
 #include <algorithm>
 
 // Bibliotecas OpenGL
-#include <glad/glad.h>  
-#include <GLFW/glfw3.h> 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 // Biblioteca GLM
 #include <glm/mat4x4.hpp>
@@ -91,12 +91,12 @@ struct ObjModel
 // Dados de renderização de cada objeto na cena
 struct SceneObject
 {
-    std::string name;              
-    size_t first_index;            
-    size_t num_indices;            
-    GLenum rendering_mode;        
-    GLuint vertex_array_object_id; 
-    glm::vec3 bbox_min;           
+    std::string name;
+    size_t first_index;
+    size_t num_indices;
+    GLenum rendering_mode;
+    GLuint vertex_array_object_id;
+    glm::vec3 bbox_min;
     glm::vec3 bbox_max;
 };
 
@@ -166,8 +166,8 @@ std::stack<glm::mat4> g_MatrixStack;
 // Tela e interação mouse
 float g_ScreenRatio = 1.0f;
 bool g_LeftMouseButtonPressed = false;
-bool g_RightMouseButtonPressed = false; 
-bool g_MiddleMouseButtonPressed = false; 
+bool g_RightMouseButtonPressed = false;
+bool g_MiddleMouseButtonPressed = false;
 float g_ForearmAngleZ = 0.0f;
 float g_ForearmAngleX = 0.0f;
 float g_TorsoPositionX = 0.0f;
@@ -192,7 +192,7 @@ GLint g_projection_uniform;
 GLint g_object_id_uniform;
 GLint g_bbox_min_uniform;
 GLint g_bbox_max_uniform;
-GLint g_has_texture_uniform;             
+GLint g_has_texture_uniform;
 GLint g_diffuse_texture_sampler_uniform;
 
 // Câmera livre
@@ -220,6 +220,8 @@ GLuint g_CrosshairVao = 0;
 std::string interactive_text = "";
 float interactive_timer = 0.0f;
 bool is_e_pressed = false;
+bool rotate_breads = false;
+float bread_rotation = 0.0f;
 
 // MAIN
 
@@ -275,7 +277,7 @@ int main(int argc, char *argv[])
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
     glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
-    FramebufferSizeCallback(window, 800, 600); 
+    FramebufferSizeCallback(window, 800, 600);
 
     const GLubyte *vendor = glGetString(GL_VENDOR);
     const GLubyte *renderer = glGetString(GL_RENDERER);
@@ -292,15 +294,14 @@ int main(int argc, char *argv[])
     BuildTrianglesAndAddToVirtualScene(&roommodel);
     std::map<std::string, GLuint> room_textures = GetTexturesFromMtl(&roommodel, "../../data/room/");
 
-    //ObjModel floormodel("../../data/floor/plane.obj");
-    //ComputeNormals(&floormodel);
-    //BuildTrianglesAndAddToVirtualScene(&floormodel);
+    // ObjModel floormodel("../../data/floor/plane.obj");
+    // ComputeNormals(&floormodel);
+    // BuildTrianglesAndAddToVirtualScene(&floormodel);
 
     ObjModel floor2model("../../data/floor2/J0IGAU84WM2TT649KPQVJYR4B.obj");
     ComputeNormals(&floor2model);
     BuildTrianglesAndAddToVirtualScene(&floor2model);
     std::map<std::string, GLuint> floor2_textures = GetTexturesFromMtl(&floor2model, "../../data/floor2/");
-
 
     ObjModel bedmodel("../../data/bed/RFSBI1TUMBM1R2T06LF7JZ3LC.obj");
     ComputeNormals(&bedmodel);
@@ -351,17 +352,17 @@ int main(int argc, char *argv[])
     ComputeNormals(&breadmodel);
     BuildTrianglesAndAddToVirtualScene(&breadmodel);
     std::map<std::string, GLuint> bread_textures = GetTexturesFromMtl(&breadmodel, "../../data/bread/");
-    
+
     ObjModel refrigeratormodel("../../data/refrigerator/92F62XNUJIV58FF7HGW9TYE8B.obj");
     ComputeNormals(&refrigeratormodel);
     BuildTrianglesAndAddToVirtualScene(&refrigeratormodel);
     std::map<std::string, GLuint> refrigerator_textures = GetTexturesFromMtl(&refrigeratormodel, "../../data/refrigerator/");
-    
+
     ObjModel sinkmodel("../../data/sink/7W8YGL7KDOLC069L6W1MQOY9V.obj");
     ComputeNormals(&sinkmodel);
     BuildTrianglesAndAddToVirtualScene(&sinkmodel);
     std::map<std::string, GLuint> sink_textures = GetTexturesFromMtl(&sinkmodel, "../../data/sink/");
-    
+
     ObjModel remotemodel("../../data/remote/2T1VFORH5Q21VLSM8ALF91TAA.obj");
     ComputeNormals(&remotemodel);
     BuildTrianglesAndAddToVirtualScene(&remotemodel);
@@ -478,9 +479,9 @@ int main(int argc, char *argv[])
     scene_collidables.push_back(parede_direita);
 
     // Matriz FLOOR
-    //float floor_scale = 100.0f;
-    //glm::vec3 floor_position = glm::vec3(0.0f, 0.0f, 0.0f);
-    //glm::mat4 floor_model_matrix = Matrix_Translate(0.0f, -9.0f, 0.0f) * Matrix_Scale(floor_scale, floor_scale, floor_scale);
+    // float floor_scale = 100.0f;
+    // glm::vec3 floor_position = glm::vec3(0.0f, 0.0f, 0.0f);
+    // glm::mat4 floor_model_matrix = Matrix_Translate(0.0f, -9.0f, 0.0f) * Matrix_Scale(floor_scale, floor_scale, floor_scale);
 
     // Matriz FLOOR
     glm::mat4 floor2_model_matrix = Matrix_Translate(0.0f, -9.0f, 0.0f) * Matrix_Scale(150.0f, 0.0f, 300.0f) * Matrix_Rotate_Z(1.55f);
@@ -586,8 +587,8 @@ int main(int argc, char *argv[])
     table.shape_type = ShapeType::SHAPE_AABB;
     table.aabb.min = glm::vec3(0.6f, -5.0f, -9.0f);
     table.aabb.max = glm::vec3(6.8f, 5.0f, 0.3f);
-    table.text = "";
-    table.is_interactive = false;
+    table.text = "mesa";
+    table.is_interactive = true;
     scene_collidables.push_back(table);
 
     // RAT
@@ -689,12 +690,19 @@ int main(int argc, char *argv[])
             // Usa câmera livre
             UpdatePlayerPosition(window, time_diff, player, scene_collidables);
 
-             if (is_e_pressed)
+            if (is_e_pressed)
             {
                 bool is_player_asleep = false;
-                std::string result_text = CheckRaycastFromCenter(player, scene_collidables, is_player_asleep);
+                std::string result_text = CheckRaycastFromCenter(player, scene_collidables, is_player_asleep, rotate_breads);
 
-                if (!result_text.empty())
+                if (rotate_breads)
+                {
+                    cout << bread_rotation << endl;
+                    bread_rotation = bread_rotation + 0.5f;
+                    rotate_breads = false;
+                }
+
+                else if (!result_text.empty())
                 {
                     interactive_text = result_text;
                     interactive_timer = 2.0f;
@@ -706,6 +714,16 @@ int main(int argc, char *argv[])
                 }
                 is_e_pressed = false;
             }
+
+            bread1_model_matrix =
+                Matrix_Translate(bread1_position.x, bread1_position.y, bread1_position.z) *
+                Matrix_Rotate_Y(bread_rotation) *
+                Matrix_Scale(bread1_scale, bread1_scale, bread1_scale);
+
+            bread2_model_matrix =
+                Matrix_Translate(bread2_position.x, bread2_position.y, bread2_position.z) *
+                Matrix_Rotate_Y(-bread_rotation) *
+                Matrix_Scale(bread2_scale, bread2_scale, bread2_scale);
 
             glm::vec4 camera_position_c = glm::vec4(player.position, 1.0f);
             glm::vec4 camera_view_vector = glm::vec4(player.front_vector, 0.0f);
@@ -753,33 +771,33 @@ int main(int argc, char *argv[])
         glUniformMatrix4fv(g_view_uniform, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(g_projection_uniform, 1, GL_FALSE, glm::value_ptr(projection));
 
-        // Constantes de diferenciação dos objetos para desenho
-        #define ROOM 0
-        #define BED 1
-        #define FLOOR 2
-        #define STOVE 3
-        #define SOFA 4
-        #define DOOR 5
-        #define CABINET1 6
-        #define TV 7
-        #define RADIATOR 8
-        #define RAT 9
-        #define TABLE 10
-        #define BREAD 11
-        #define REFRIGERATOR 12
-        #define SINK 13
-        #define REMOTE 14
-        #define FAN 15
+// Constantes de diferenciação dos objetos para desenho
+#define ROOM 0
+#define BED 1
+#define FLOOR 2
+#define STOVE 3
+#define SOFA 4
+#define DOOR 5
+#define CABINET1 6
+#define TV 7
+#define RADIATOR 8
+#define RAT 9
+#define TABLE 10
+#define BREAD 11
+#define REFRIGERATOR 12
+#define SINK 13
+#define REMOTE 14
+#define FAN 15
 
         // Desenho dos objetos
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(room_model_matrix));
         DrawVirtualObjectWithMtl(&roommodel, room_textures, ROOM);
 
-        //glActiveTexture(GL_TEXTURE0);
-        //glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(floor_model_matrix));
-        //glUniform1f(g_object_id_uniform, FLOOR);
-        //DrawVirtualObject("the_plane");
+        // glActiveTexture(GL_TEXTURE0);
+        // glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(floor_model_matrix));
+        // glUniform1f(g_object_id_uniform, FLOOR);
+        // DrawVirtualObject("the_plane");
 
         glActiveTexture(GL_TEXTURE0);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(floor2_model_matrix));
@@ -882,7 +900,6 @@ int main(int argc, char *argv[])
         glBindVertexArray(0); // Desliga o VAO por segurança
         glEnable(GL_DEPTH_TEST);
 
-    
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -913,8 +930,8 @@ GLuint LoadTextureImage(const char *filename, int dummy_param)
     printf("OK (%dx%d).\n", width, height);
 
     GLuint texture_id;
-    GLuint sampler_id; 
-                       
+    GLuint sampler_id;
+
     glGenTextures(1, &texture_id);
     glGenSamplers(1, &sampler_id);
 
@@ -934,8 +951,8 @@ GLuint LoadTextureImage(const char *filename, int dummy_param)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    glBindTexture(GL_TEXTURE_2D, 0); 
-    
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     stbi_image_free(data);
 
     return texture_id; // Usado em objetos que possuem .tml
@@ -982,13 +999,16 @@ void DrawVirtualObjectWithMtl(ObjModel *object, std::map<std::string, GLuint> te
         const auto &material = object->materials[material_id];
 
         // Ative a textura difusa do material caso exista no .mtl
-        if (!material.diffuse_texname.empty()) {
+        if (!material.diffuse_texname.empty())
+        {
             glUniform1i(g_has_texture_uniform, 1);
             GLuint texture_id = textures_name_to_id[material.diffuse_texname];
             glActiveTexture(GL_TEXTURE0); // Textura em Image0
             glBindTexture(GL_TEXTURE_2D, texture_id);
             glUniform1i(g_diffuse_texture_sampler_uniform, 0);
-        } else {
+        }
+        else
+        {
             // Sem textura
             glUniform1i(g_has_texture_uniform, 0);
         }
@@ -1021,7 +1041,7 @@ std::map<std::string, GLuint> GetTexturesFromMtl(ObjModel *object, std::string t
 // Função que carrega os shaders de vértices e de fragmentos que serão utilizados para renderização
 void LoadShadersFromFiles()
 {
-    
+
     GLuint vertex_shader_id = LoadShader_Vertex("../../src/shader_vertex.glsl");
     GLuint fragment_shader_id = LoadShader_Fragment("../../src/shader_fragment.glsl");
 
@@ -1033,10 +1053,10 @@ void LoadShadersFromFiles()
     g_GpuProgramID = CreateGpuProgram(vertex_shader_id, fragment_shader_id);
 
     // Buscamos o endereço das variáveis definidas dentro do Vertex Shader
-    g_model_uniform = glGetUniformLocation(g_GpuProgramID, "model");           
-    g_view_uniform = glGetUniformLocation(g_GpuProgramID, "view");             
-    g_projection_uniform = glGetUniformLocation(g_GpuProgramID, "projection"); 
-    g_object_id_uniform = glGetUniformLocation(g_GpuProgramID, "object_id"); 
+    g_model_uniform = glGetUniformLocation(g_GpuProgramID, "model");
+    g_view_uniform = glGetUniformLocation(g_GpuProgramID, "view");
+    g_projection_uniform = glGetUniformLocation(g_GpuProgramID, "projection");
+    g_object_id_uniform = glGetUniformLocation(g_GpuProgramID, "object_id");
     g_bbox_min_uniform = glGetUniformLocation(g_GpuProgramID, "bbox_min");
     g_bbox_max_uniform = glGetUniformLocation(g_GpuProgramID, "bbox_max");
     g_diffuse_texture_sampler_uniform = glGetUniformLocation(g_GpuProgramID, "diffuse_texture");
@@ -1259,7 +1279,7 @@ void BuildTrianglesAndAddToVirtualScene(ObjModel *model)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_id);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indices.size() * sizeof(GLuint), indices.data());
-   
+
     // "Desligamos" o VAO
     glBindVertexArray(0);
 }
@@ -1495,9 +1515,9 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
     if (!useLookAt)
     {
         // Usa câmera livre
-        static float horizontal = -90.0f; 
+        static float horizontal = -90.0f;
         static float vertical = 0.0f;
-        static float x_pos = 400.0f; 
+        static float x_pos = 400.0f;
         static float y_pos = 400.0f;
 
         float xoffset = (float)xpos - x_pos;
@@ -1525,7 +1545,7 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
     }
     else
     {
-        //Usa câmera look at
+        // Usa câmera look at
         if (g_LeftMouseButtonPressed)
         {
             float dx = xpos - g_LastCursorPosX;
@@ -1541,7 +1561,7 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
             if (g_CameraPhi > max_phi)
                 g_CameraPhi = max_phi;
 
-            if (g_CameraPhi < 0.01f) 
+            if (g_CameraPhi < 0.01f)
                 g_CameraPhi = 0.01f;
 
             g_LastCursorPosX = xpos;
@@ -1609,9 +1629,9 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
 
         if (useLookAt)
         {
-            g_CameraDistance = 60.0f; 
+            g_CameraDistance = 60.0f;
             g_CameraPhi = 0.5f;
-            g_CameraTheta = 2.0f; 
+            g_CameraTheta = 2.0f;
 
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
@@ -1619,7 +1639,6 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
         {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
-        
     }
 }
 

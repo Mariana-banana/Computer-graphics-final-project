@@ -28,6 +28,6 @@ bool RayIntersectsSphere(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
 bool RayIntersectsAABB(const glm::vec3 &ray_origin, const glm::vec3 &ray_dir,
                        const AABB &box, float &t_out);
 
-std::string CheckRaycastFromCenter(const Player &player, std::vector<CollidableObject> &objects, bool &is_player_asleep);
+std::string CheckRaycastFromCenter(const Player &player, std::vector<CollidableObject> &objects, bool &is_player_asleep, bool &rotate_breads);
 
 void UpdateRat(Rat &rat, const Player &player, const std::vector<CollidableObject> &other_collidables, float time_diff);

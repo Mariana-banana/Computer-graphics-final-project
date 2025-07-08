@@ -71,12 +71,6 @@ struct CollidableObject
     std::string interactive_text;
 };
 
-bool CheckPointSphereCollision(glm::vec3 point, const Sphere &sphere);
-
-bool CheckPointAABBCollision(glm::vec3 point, const AABB &box);
-
-bool CheckPointPlaneCollision(glm::vec3 point, const Plane &plane);
-
 bool TestAABBvsAABB(const AABB &a, const AABB &b);
 
 bool TestAABBvsSphere(const AABB &box, const Sphere &sphere);
