@@ -44,7 +44,19 @@ A câmera look at foi implementada da mesma maneira vista no laboratório 2, com
 
 ### Mais de uma Instância para Algum Objeto
 
-O objeto BREAD que está localizado em cima da mesa tem duas intâncias. As informações dos arquivos .obj e .mtl são obtidas apenas uma vez. Foram definidas duas matrizes de transformação geométrica, cada uma transladada de uma maneira. A rotação dos objetos também é uma diferença entre as matrizes.
+O objeto BREAD que está localizado em cima da mesa tem duas intâncias. As informações dos arquivos .obj e .mtl são obtidas apenas uma vez. Foram definidas duas matrizes de transformação geométrica, cada uma transladada de uma maneira. A rotação dos objetos também é uma diferença entre as matrizes. A função de desenho foi chamada duas vezes para esse objeto, cada uma utilizando uma matriz de trasnformação geométrica diferente. Ambas instâncias foram associadas ao mesmo *object_id* para o *shader*.
+
+```cpp
+float bread1_scale = 0.5f;
+glm::vec3 bread1_position = glm::vec3(4.0f, -4.5f, -5.0f);
+glm::mat4 bread1_model_matrix = Matrix_Translate(bread1_position.x, bread1_position.y, bread1_position.z) 
+                                * Matrix_Scale(bread1_scale, bread1_scale, bread1_scale) * Matrix_Rotate_Y(0.60f);
+
+float bread2_scale = 0.5f;
+glm::vec3 bread2_position = glm::vec3(4.0f, -4.5f, -3.0f);
+glm::mat4 bread2_model_matrix = Matrix_Translate(bread2_position.x, bread2_position.y, bread2_position.z) 
+                                * Matrix_Scale(bread2_scale, bread2_scale, bread2_scale) * Matrix_Rotate_Y(-0.60f);
+```
 
 ![Início do Jogo](screenshots/3.png)
 
