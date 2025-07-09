@@ -37,6 +37,7 @@ make run
 
 Ao iniciar o jogo, você estará no interior da casa. Você deve explorá-la se movimentando utilizando as teclas A, W, S e D (especificadas a seguir) e movimentando o mouse. Interaja com os objetos da casa para descobrir as ações que devem ser feitas para que você possa dormir tranquilamente, sem que sua morte ocorra. Para interagir com os objetos da casa posicione o alvo (ponto escuro no centro da tela) sobre o objeto e precione a tecla E. Se o objeto conter uma ação que impededirá sua morte durante o sono, aparecerá uma mensagem na tela da ação realizada. Ao interagir com a cama, você irá dormir. Se alguma ação não foi realizada, você morrerá e o jogo será encerrado. É preciso iniciar um novo jogo e tentar descobrir qual ação ficou faltando para você dormir tranquilamente. Você também pode visualizar a casa do exterior, clicando a tecla C. Para retornar para o interior da casa, basta clicar em C novamente.
 
+   ```
     [ W ] [ E ]
 [ A ] [ S ] [ D ]
               [ C ]
@@ -47,6 +48,7 @@ S = baixo
 D = direita
 E = interagir com um objeto da casa
 C = alterar a câmera
+```
 
 ## Aplicação dos Conhecimentos de Computação Gráfica
 
