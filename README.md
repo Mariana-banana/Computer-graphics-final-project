@@ -40,7 +40,7 @@ Ao iniciar o jogo, você estará no interior da casa. Você deve explorá-la se 
    ```
     [ W ] [ E ]
 [ A ] [ S ] [ D ]
-               [ C ]
+                [ C ]
 
 W = cima
 A = esquerda
