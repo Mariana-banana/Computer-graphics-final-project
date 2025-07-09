@@ -6,7 +6,45 @@ Foi desenvolvido pela dupla um jogo baseado no formato _Escape Room_, no qual o 
 
 ## Como Executar
 
+```shell
+# 1- Clonar este repositório
+git clone https://github.com/Mariana-banana/Computer-graphics-final-project/tree/main
+
+# 2- Navegar para o diretório do projeto
+cd Computer-graphics-final-project
+
+# 3- Executar o jogo (já compilado)
+make run
+```
+
+🚨 É possível que ao executar o jogo ocorra um erro relacionado ao _path_ definido durante a compilação em nossos computadores. Caso esse erro ocorra, siga os seguintes passos para compilar o jogo e gerar um executável com o _path_ correto para o seu computador:
+
+```shell
+# 1- Navegar para o diretório do projeto
+cd Computer-graphics-final-project
+
+# 2- Executar os seguintes comandos
+rm -rf CMakeFiles/ CMakeCache.txt Makefile
+cmake .
+
+# 3- Executar o jogo
+make run
+```
+
 ## Como Jogar
+
+Ao iniciar o jogo, você estará no interior da casa. Você deve explorá-la se movimentando utilizando as teclas A, W, S e D (especificadas a seguir) e movimentando o mouse. Interaja com os objetos da casa para descobrir as ações que devem ser feitas para que você possa dormir tranquilamente, sem que sua morte ocorra. Para interagir com os objetos da casa posicione o alvo (ponto escuro no centro da tela) sobre o objeto e precione a tecla E. Se o objeto conter uma ação que impededirá sua morte durante o sono, aparecerá uma mensagem na tela da ação realizada. Ao interagir com a cama, você irá dormir. Se alguma ação não foi realizada, você morrerá e o jogo será encerrado. É preciso iniciar um novo jogo e tentar descobrir qual ação ficou faltando para você dormir tranquilamente. Você também pode visualizar a casa do exterior, clicando a tecla C. Para retornar para o interior da casa, basta clicar em C novamente.
+
+    [ W ] [ E ]
+[ A ] [ S ] [ D ]
+              [ C ]
+
+W = cima
+A = esquerda
+S = baixo
+D = direita
+E = interagir com um objeto da casa
+C = alterar a câmera
 
 ## Aplicação dos Conhecimentos de Computação Gráfica
 
@@ -94,6 +132,7 @@ DrawVirtualObjectWithMtl(&breadmodel, bread_textures, BREAD);
 ### Tipos de Testes de Intersecção
 
 Para as colisões, utilizamos Bboxes para todos os objetos, com exceção das paredes que são planos com suas normais apontadas para dentro do cômodo. Para os testes, vericamos se o objeto móvel(o rato ou o jogador - esfera ou cubo AABB) irá, na posição seguinte, colidir com algum objeto da cena. Se o retorno dessa verificação for _true_, houve colisão e portanto proibimos a movimentação. Para o jogador, simplesmente o impedimos de seguir naquela direção. Para o rato, invertemos o _sentido_ da locomoção. Caso nenhuma colisão seja detectada, computamos a nova posição do objeto móvel. As funções de teste utilizadas podem ser encontradas no arquivo **collisions.cpp**, que conta com as 4 funções de teste abaixo:
+
 ```cpp
 bool TestAABBvsAABB(const AABB &a, const AABB &b);
 bool TestAABBvsSphere(const AABB &box, const Sphere &sphere);
@@ -122,6 +161,7 @@ O cálculo dos modelos de iluminação segue o que foi aprendido nas aulas e na 
 ### Movimentação com Curva de Bézier Cúbica
 
 Para a curva, os pontos escolhidos foram os abaixo:
+
 ```cpp
 glm::vec3 p0 = glm::vec3(-18.0f, -8.0f, -18.0f);
 glm::vec3 p1 = glm::vec3(18.0f, -8.0f, -18.0f);
@@ -133,6 +173,7 @@ As suas funções são _CalculateBezierPoint_ e _CalculateBezierTangent_. A prim
 ## Animações Baseadas em Tempo
 
 Para implementar as animações baseadas em tempo, obtemos o tempo atual de um frame através da função _glfwGetTime()_. Calculamos então a diferença entre o tempo atual e o último tempo computado. Essa diferença é então multiplicada nas posições do rato e do jogador, que são os únicos objetos animados, garantindo que suas locomoções não fiquem lentas. Abaixo foram selecionadas as 2 linhas de código que implementam essa multiplicação:
+
 ```cpp
 rat.t += rat.direction * rat.speed * time_diff;
 player.position + movements[i] * camera_speed * time_diff;
