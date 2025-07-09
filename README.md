@@ -222,3 +222,7 @@ Um exemplo de uso dessas ferramentas para encontrar fonte de erros foi quando, a
 ![Erro no carregamento das texturas](screenshots/15.png)
 
 A dupla também utilizou IAs para conseguir renderizar corretamente o quadrado preto central na tela. A dificuldade principal era encontrar uma maneira fácil de fazer isso. A sugestão das IAs de criar arquivos de *vertex* e *fragment* foi a solução implementada no projeto final.
+
+## Apresentação
+
+[Clique aqui para ver o vídeo](https://youtu.be/lMCw-ADxIDM).
