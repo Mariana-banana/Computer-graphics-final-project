@@ -134,7 +134,7 @@ glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(bread2_model_mat
 DrawVirtualObjectWithMtl(&breadmodel, bread_textures, BREAD);
 ```
 
-![Diferentes instâncias de BREAD](screenshots/3.png)
+![Diferentes instâncias de BREAD](screenshots/foto_pao_2.png)
 
 ### Tipos de Testes de Intersecção
 
