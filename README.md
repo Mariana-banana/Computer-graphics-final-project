@@ -174,7 +174,7 @@ glm::vec3 p3 = glm::vec3(-18.0f, -8.0f, 18.0f);
 ```
 As suas funções são _CalculateBezierPoint_ e _CalculateBezierTangent_. A primeira faz o cálculo da curva para um determinado ponto `P = (1-t)**3 * P0 + t*P1*(3*(1-t)**2) + P2*(3*(1-t)*t**2) + P3*t**3`. Já a segunda calcula sua tangente, de forma que conseguimos obter a direção correta para qual o rato deve olhar em um determinado instante.
 
-## Animações Baseadas em Tempo
+### Animações Baseadas em Tempo
 
 Para implementar as animações baseadas em tempo, obtemos o tempo atual de um frame através da função _glfwGetTime()_. Calculamos então a diferença entre o tempo atual e o último tempo computado. Essa diferença é então multiplicada nas posições do rato e do jogador, que são os únicos objetos animados, garantindo que suas locomoções não fiquem lentas. Abaixo foram selecionadas as 2 linhas de código que implementam essa multiplicação:
 
