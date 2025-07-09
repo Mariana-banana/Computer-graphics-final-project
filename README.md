@@ -6,6 +6,8 @@ Foi desenvolvido pela dupla um jogo baseado no formato _Escape Room_, no qual o 
 
 ## Como Executar
 
+Para jogar o jogo no seu computador, é preciso seguir os seguintes passos:
+
 ```shell
 # 1- Clonar este repositório
 git clone https://github.com/Mariana-banana/Computer-graphics-final-project/tree/main
