@@ -1,6 +1,6 @@
 # Durma Tranquilamente
 
-Foi desenvolvido pela dupla um jogo baseado formato _Escape Room_, no qual o jogador permanece em uma casa e deve interagir com os móveis e objetos do ambiente, descobrindo uma sequência oculta de ações que deve realizar antes de deitar para dormir. O objetivo do jogo é dormir em segurança, sem que uma morte ocorra. 
+Foi desenvolvido pela dupla um jogo baseado no formato _Escape Room_, no qual o jogador permanece em uma casa e deve interagir com os móveis e objetos do ambiente, descobrindo uma sequência oculta de ações que deve realizar antes de deitar para dormir. O objetivo do jogo é dormir em segurança, sem que uma morte ocorra. 
 
 ![Início do Jogo](screenshots/1.png)
 
@@ -14,9 +14,9 @@ O código segue a estrutura dos laboratórios práticos realizados ao longo da d
 
 ### Malhas Poligonais Complexas e Mapeamento de Texturas
 
-O jogo possui um total de 15 objetos de complexidade variadas. Os modelos 3D dos objetos foram obtidos do site [Rig Models](https://rigmodels.com/index.php). Cada modelo possui um arquivo .obj, um arquivo .mtl e uma ou mais imagens de textura. 
+O jogo possui um total de 15 objetos de complexidades variadas. Os modelos 3D dos objetos foram obtidos do site [Rig Models](https://rigmodels.com/index.php). Cada modelo possui um arquivo .obj, um arquivo .mtl e uma ou mais imagens de textura. 
 
-Para obter as informações dos arquivos foi utilizada a mesma função de leitura dos laboratórios 4 e 5, porém para enviar as informações para os _shaders_ foi necessário adaptar a função de desenho, pois era precis informar para cada objeto, qual era sua imagem de textura. Também foi utilizada uma terceira função que relacionada cada objeto com sua imagem de textura, para facilitar a passagem dessa informação para os _shaders_ na função de desenho. 
+Para obter as informações dos arquivos foi utilizada a mesma função de leitura dos laboratórios 4 e 5, porém para enviar as informações para os _shaders_ foi necessário adaptar a função de desenho, pois era necessário informar para cada objeto, qual era sua imagem de textura. Também foi utilizada uma terceira função que relaciona cada objeto com sua respectiva imagem de textura, para facilitar a passagem dessa informação para os _shaders_ na função de desenho. 
 
 ![Início do Jogo](screenshots/5.png)
 
@@ -28,7 +28,7 @@ Para o carregamento dos objetos e das texturas foram utilizados conhecimentos ad
 
 ### Câmera Livre e Câmera Look At
 
-O jogo desenvolvido possui os dois tipos de cãmera: câmera livre e cãmera look at. Ao iniciar o jogo, o jogador está dentro da casa e tem uma visão obtida através da câmera livre, podendo se movimentar pelo cômodo utilizando o teclado e o mouse. 
+O jogo desenvolvido possui os dois tipos de câmera: câmera livre e câmera look at. Ao iniciar o jogo, o jogador está dentro da casa e tem uma visão obtida através da câmera livre, podendo se movimentar pelo cômodo utilizando o teclado e o mouse. 
 
 ![Jogador com câmera livre](screenshots/8.png)
 
@@ -38,13 +38,13 @@ O jogador também tem a possibilidade de apertar a tecla _c_ e mudar o tipo de c
 
 ![Jogador com câmera look at](screenshots/7.png)
 
-Quando a tecla é pressionada e a flag _useLookAt_ é ativada a posição da câmera é calculada em coordenadas esféricas. As variáveis *g_CameraPhi*, *g_CameraTheta*, *g_CameraDistance* definem sua posição. a câmera está fixamente olhando para a origem, onde está centrada a casa do jogo. Quando o botão esquerdo do mouse é pressionado, o movimento do cursor atualiza os ângulos *g_CameraTheta* e *g_CameraPhi*, fazendo a câmera orbitar ao redor da casa. Também é possível se aproximar ou se afastar da casa usando _scroll_ do mouse.
+Quando a tecla é pressionada e a flag _useLookAt_ é ativada, a posição da câmera é calculada em coordenadas esféricas. As variáveis *g_CameraPhi*, *g_CameraTheta*, *g_CameraDistance* definem sua posição. A câmera está fixadamente olhando para a origem do sistema de coordenadas, onde está centrada a casa do jogo. Quando o botão esquerdo do mouse é pressionado, o movimento do cursor atualiza os ângulos *g_CameraTheta* e *g_CameraPhi*, fazendo a câmera orbitar ao redor da casa. Também é possível se aproximar ou se afastar da casa usando _scroll_ do mouse.
 
-A câmera look at foi implementada da mesma maneira vista no laboratório 2, com uma única diferença. O jogo não poderia permitir que o jogador orbitasse livremente pela casa e visualizasse seu interior por baixo. Para evitar isso, o ângulos *g_CameraPhi* foi limitado na função _CursorPosCallback()_. Se ele for menor que 0.01, ele é fixado em 0.01. Assim a sensação é que a câmera virtual "bate no chão".
+A câmera look at foi implementada da mesma maneira vista no laboratório 2, com uma única diferença. O jogo não poderia permitir que o jogador orbitasse livremente pela casa e visualizasse seu interior por baixo. Para evitar isso, o ângulo *g_CameraPhi* foi limitado na função _CursorPosCallback()_. Se ele for menor que 0.01, ele é fixado em 0.01. Assim a sensação é que a câmera virtual "bate no chão".
 
 ### Mais de uma Instância para Algum Objeto
 
-O objeto BREAD que está localizado em cima da mesa tem duas intâncias. As informações dos arquivos .obj e .mtl são obtidas apenas uma vez. Foram definidas duas matrizes de transformação geométrica, cada uma transladada de uma maneira. A rotação dos objetos também é uma diferença entre as matrizes. A função de desenho foi chamada duas vezes para esse objeto, cada uma utilizando uma matriz de trasnformação geométrica diferente. Ambas instâncias foram associadas ao mesmo *object_id* para o *shader*.
+O objeto BREAD que está localizado em cima da mesa tem duas intâncias. As informações dos arquivos .obj e .mtl são obtidas apenas uma vez. Foram definidas duas matrizes de transformação geométrica, cada uma translada o objeto diferentemente. A rotação dos objetos também é uma diferença entre essas matrizes. A função de desenho foi chamada duas vezes para esse objeto, cada uma utilizando uma matriz de transformação geométrica diferente. Ambas instâncias foram associadas ao mesmo *object_id* para o *shader*.
 
 ```cpp
 float bread1_scale = 0.5f;
@@ -78,7 +78,7 @@ DrawVirtualObjectWithMtl(&breadmodel, bread_textures, BREAD);
 
 ### Modelos de Iluminação e Modelos de Interpolação
 
-Há dois objetos que tem sua cor calculada utilizando um modelo de iluminação: BREAD e RADIATOR. O _fragment shader_ recebe utiliza o objecct_id para diferenciar os diferentes objetos presentes no jogo. Para BREAD a cor é calculada usando o modelo de iluminação Blinn-Phong. Para RADIATOR a cor é calculada usando o modelo de iluminação de Lambert (Difusa).
+Há dois objetos que tem sua cor calculada utilizando um modelo de iluminação: BREAD e RADIATOR. O _fragment shader_ utiliza o *object_id* para diferenciar os diferentes objetos presentes no jogo. Para BREAD a cor é calculada usando o modelo de iluminação Blinn-Phong. Para RADIATOR a cor é calculada usando o modelo de iluminação de Lambert (Difusa).
 
 Para calcular a cor final usando o modelo de iluminação de Lambert, foi multiplicada a cor difusa obtida através da textura multiplicada por um vetor (0.9, 0.9, 0.9) para ajuste do brilho e pelo termo de iluminação _lambert_. Esse termo foi calculado a partir do produto vetorial entre a normal da superfície e a fonte de luz. O termo lambert garante que as superfícies não voltadas para luz não recebam iluminação, pois o resultado do produto vetorial indica o quanto a luz incide na superfície.
 
@@ -103,9 +103,9 @@ _adicionar parágrafo(s) sobre implementação da dasmovimentações baseadas em
 ### Aline
 
 - Leitura de arquivos .obj e .mtl
-- Pesquisa por modelos 3D compatíveis com o as funções de leitura e desenho
+- Pesquisa por modelos 3D compatíveis com as funções de leitura e desenho
 - Desenho dos objetos
-- Posicionamento dos objetos da cena virtual por meio de transformações geométricas
+- Posicionamento dos objetos na cena virtual por meio de transformações geométricas
 - Mapeamento de texturas
 - Modelos de iluminação Lambert e Blinn-Phong
 - Modelo de interpolação Phong
@@ -127,6 +127,3 @@ Um exemplo de uso dessas ferramentas para encontrar fonte de erros foi quando, a
 ![Erro no carregamento das texturas](screenshots/15.png)
 
 _adicionar parágrafo(s) sobre uso de ia para o ponto (alvo)_
-
-
-
