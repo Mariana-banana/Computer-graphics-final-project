@@ -26,13 +26,34 @@ Para o carregamento dos objetos e das texturas foram utilizados conhecimentos ad
 
 ### Transformações Geométricas Controladas pelo Usuário
 
+O jogador tem a possibilidade de rotacionar os pães em cima da mesa, um no sentido horário e outro no sentido anti-horário, ao mesmo tempo. Para tal, o jogador deve interagir com a mesa, apertando a tecla _E_. A rotação é feita através de uma rotação em torno do eixo Y por uma variável que incrementa 0.5 a cada nova interação com a mesa.
+```cpp
+  if (rotate_breads)
+  {
+      bread_rotation = bread_rotation + 0.5f;
+      rotate_breads = false;
+  }
+
+// ... código entre dos dois trechos ...
+
+  bread1_model_matrix =
+      Matrix_Translate(bread1_position.x, bread1_position.y, bread1_position.z) *
+      Matrix_Rotate_Y(bread_rotation) *
+      Matrix_Scale(bread1_scale, bread1_scale, bread1_scale);
+
+  bread2_model_matrix =
+      Matrix_Translate(bread2_position.x, bread2_position.y, bread2_position.z) *
+      Matrix_Rotate_Y(-bread_rotation) *
+      Matrix_Scale(bread2_scale, bread2_scale, bread2_scale);
+``` 
+
 ### Câmera Livre e Câmera Look At
 
 O jogo desenvolvido possui os dois tipos de câmera: câmera livre e câmera look at. Ao iniciar o jogo, o jogador está dentro da casa e tem uma visão obtida através da câmera livre, podendo se movimentar pelo cômodo utilizando o teclado e o mouse. 
 
 ![Jogador com câmera livre](screenshots/8.png)
 
-_adicionar parágrafo sobre implementação da câmera livre_
+Para a implementação da câmera livre, utilizamos 3 parâmetros do jogador: o vetor _up_, que mantém o jogador sempre "no solo", sendo um vetor unitário no eixo Y; o vetor _front_ que determina a direção da câmera; e _position_, um vetor que determina a posição atual do jogador. Para sua movimentação, foram escolhidas as teclas padrão *WASD* para possibilitar andar nas 4 direções. Já a rotação da câmera se dá a partir de um cálculo da movimentação do mouse, que pode ser visto em detalhes na função *CursorPosCallback*. 
 
 O jogador também tem a possibilidade de apertar a tecla _c_ e mudar o tipo de câmera virtual de câmera livre para câmera look at. Quando o jogador altera o tipo de câmera ele vai para o exterior da casa.
 
@@ -72,6 +93,14 @@ DrawVirtualObjectWithMtl(&breadmodel, bread_textures, BREAD);
 
 ### Tipos de Testes de Intersecção
 
+Para as colisões, utilizamos Bboxes para todos os objetos, com exceção das paredes que são planos com suas normais apontadas para dentro do cômodo. Para os testes, vericamos se o objeto móvel(o rato ou o jogador - esfera ou cubo AABB) irá, na posição seguinte, colidir com algum objeto da cena. Se o retorno dessa verificação for _true_, houve colisão e portanto proibimos a movimentação. Para o jogador, simplesmente o impedimos de seguir naquela direção. Para o rato, invertemos o _sentido_ da locomoção. Caso nenhuma colisão seja detectada, computamos a nova posição do objeto móvel. As funções de teste utilizadas podem ser encontradas no arquivo **collisions.cpp**, que conta com as 4 funções de teste abaixo:
+```cpp
+bool TestAABBvsAABB(const AABB &a, const AABB &b);
+bool TestAABBvsSphere(const AABB &box, const Sphere &sphere);
+bool TestAABBvsPlane(const AABB &box, const Plane &plane);
+bool TestSphereVsPlane(const Sphere &sphere, const Plane &plane);
+``` 
+
 ![Objeto RAT movendo em uma direção antes de colidir](screenshots/11.png)
 
 ![Objeto RAT movendo em outra direção após colidir](screenshots/12.png)
@@ -92,11 +121,22 @@ O cálculo dos modelos de iluminação segue o que foi aprendido nas aulas e na 
 
 ### Movimentação com Curva de Bézier Cúbica
 
-_adicionar parágrafo(s) sobre implementação da curva_
+Para a curva, os pontos escolhidos foram os abaixo:
+```cpp
+glm::vec3 p0 = glm::vec3(-18.0f, -8.0f, -18.0f);
+glm::vec3 p1 = glm::vec3(18.0f, -8.0f, -18.0f);
+glm::vec3 p2 = glm::vec3(18.0f, -8.0f, 18.0f);
+glm::vec3 p3 = glm::vec3(-18.0f, -8.0f, 18.0f);
+```
+As suas funções são _CalculateBezierPoint_ e _CalculateBezierTangent_. A primeira faz o cálculo da curva para um determinado ponto `P = (1-t)**3 * P0 + t*P1*(3*(1-t)**2) + P2*(3*(1-t)*t**2) + P3*t**3`. Já a segunda calcula sua tangente, de forma que conseguimos obter a direção correta para qual o rato deve olhar em um determinado instante.
 
 ## Animações Baseadas em Tempo
 
-_adicionar parágrafo(s) sobre implementação da dasmovimentações baseadas em tempo_
+Para implementar as animações baseadas em tempo, obtemos o tempo atual de um frame através da função _glfwGetTime()_. Calculamos então a diferença entre o tempo atual e o último tempo computado. Essa diferença é então multiplicada nas posições do rato e do jogador, que são os únicos objetos animados, garantindo que suas locomoções não fiquem lentas. Abaixo foram selecionadas as 2 linhas de código que implementam essa multiplicação:
+```cpp
+rat.t += rat.direction * rat.speed * time_diff;
+player.position + movements[i] * camera_speed * time_diff;
+``` 
 
 ## Contribuições
 
@@ -114,7 +154,14 @@ _adicionar parágrafo(s) sobre implementação da dasmovimentações baseadas em
 
 ### Mariana
 
-_adicionar tópicos sobre parte que implementou_
+- Câmera livre
+- Intersecções de objetos de formatos distintos
+- Animação baseada em tempo
+- Transformação geométrica de um objeto
+- Um objeto se locomovendo em uma curva de Bézier
+- Lógica de interação do rato com o mundo
+- Lógica de interação do jogador com o mundo
+- Jogabilidade geral, como as consequências das interações do jogador com os objetos.
 
 ## Uso de Inteligência Artificial
 
@@ -126,4 +173,4 @@ Um exemplo de uso dessas ferramentas para encontrar fonte de erros foi quando, a
 
 ![Erro no carregamento das texturas](screenshots/15.png)
 
-_adicionar parágrafo(s) sobre uso de ia para o ponto (alvo)_
+A dupla também utilizou IAs para conseguir renderizar corretamente o quadrado preto central na tela. A dificuldade principal era encontrar uma maneira fácil de fazer isso. A sugestão das IAs de criar arquivos de *vertex* e *fragment* foi a solução implementada no projeto final.
