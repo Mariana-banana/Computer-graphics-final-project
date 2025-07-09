@@ -88,6 +88,9 @@ O jogador tem a possibilidade de rotacionar os pães em cima da mesa, um no sent
       Matrix_Rotate_Y(-bread_rotation) *
       Matrix_Scale(bread2_scale, bread2_scale, bread2_scale);
 ``` 
+![Pães antes da interação](screenshots/foto_pao_1.png)
+
+![Pães depois da interação](screenshots/foto_pao_2.png)
 
 ### Câmera Livre e Câmera Look At
 
